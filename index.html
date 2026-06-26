@@ -912,6 +912,7 @@
 
               <div x-data="{ 
                   isEditing: false, 
+                  isSavingEdit: false,
                   editTitle: proposal.title, 
                   editCreator: proposal.creator, 
                   editDepartment: proposal.department, 
@@ -1173,8 +1174,9 @@
                       class="px-4 py-2 border border-neutral-200 hover:bg-neutral-50 text-xs font-bold rounded-xl transition-all">
                       ยกเลิก (Cancel)
                     </button>
-                    <button type="button" @click="
-                        if (handleSaveCorrections(proposal, {
+                    <button type="button" :disabled="isSavingEdit" @click="
+                        isSavingEdit = true;
+                        let success = await handleSaveCorrections(proposal, {
                           title: editTitle,
                           creator: editCreator,
                           department: editDepartment,
@@ -1182,13 +1184,24 @@
                           problemCause: editProblemCause,
                           solutionAfter: editSolutionAfter,
                           expectedBenefit: editExpectedBenefit
-                        }, confirmSamePerson)) {
+                        }, confirmSamePerson);
+                        
+                        if (success) {
                           isEditing = false;
+                          await fetchLiveProposals();
                           $nextTick(() => lucide.createIcons());
                         }
+                        isSavingEdit = false;
                       "
-                      class="bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-sm active:scale-95">
-                      บันทึกการแก้ไข (Save Corrections)
+                      :class="isSavingEdit ? 'bg-neutral-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 active:scale-95'"
+                      class="flex items-center gap-1.5 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-sm">
+                      <template x-if="isSavingEdit">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 animate-spin"></i>
+                      </template>
+                      <template x-if="!isSavingEdit">
+                        <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                      </template>
+                      <span x-text="isSavingEdit ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข (Save)'"></span>
                     </button>
                   </div>
                 </div>
@@ -2081,7 +2094,8 @@
                   solutionAfter: updatedData.solutionAfter,
                   expectedBenefit: updatedData.expectedBenefit,
                   status: targetStatus,
-                  editorName: updatedData.editorName
+                  editorName: updatedData.editorName,
+                  rejectedDueToDepartment: false
                 })
               });
             } catch (e) {
@@ -2097,7 +2111,7 @@
           return feedbackLower.includes('แผนก') || feedbackLower.includes('dept') || feedbackLower.includes('department');
         },
 
-        handleSaveCorrections(proposal, updatedFields, confirmSamePerson) {
+        async handleSaveCorrections(proposal, updatedFields, confirmSamePerson) {
           const editor = prompt('กรุณากรอกชื่อผู้ทำการแก้ไขข้อมูลนี้ / Please enter the name of the person who edited it:');
           if (editor === null) return false;
           if (!editor.trim()) {
@@ -2108,7 +2122,7 @@
             alert('กรุณากดเช็กเพื่อยืนยันตัวตนว่าคุณเป็นผู้ยื่นข้อเสนอไอเดียคนเดียวกันกับแบบร่างตั้งต้นก่อนบันทึกข้อมูลครับ');
             return false;
           }
-          this.handleUpdateProposal(proposal.row, {
+          await this.handleUpdateProposal(proposal.row, {
             ...updatedFields,
             editorName: editor.trim()
           });
