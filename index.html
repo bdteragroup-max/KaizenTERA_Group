@@ -1601,6 +1601,53 @@
       </div>
     </div>
 
+    <!-- Editor Name Prompt Modal -->
+    <div x-show="showEditorPrompt" x-cloak
+      class="fixed inset-0 bg-neutral-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div @click.away="cancelEditorName" class="bg-white border border-neutral-200 rounded-3xl p-6 shadow-2xl max-w-sm w-full space-y-4 relative">
+
+        <button type="button" @click="cancelEditorName"
+          class="absolute top-4 right-4 p-1 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+
+        <div class="flex flex-col items-center text-center space-y-2">
+          <div
+            class="w-12 h-12 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 shadow-sm">
+            <i data-lucide="user-check" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-black text-neutral-950">ยืนยันการแก้ไขข้อมูล</h3>
+          <p class="text-xs text-neutral-500 font-semibold">
+            กรุณากรอกชื่อผู้ทำการแก้ไขข้อมูลนี้ (เพื่อบันทึกเป็นประวัติ)
+          </p>
+        </div>
+
+        <div class="space-y-3">
+          <div class="space-y-1">
+            <input type="text" x-ref="editorInput" x-model="editorPromptInput" placeholder="ระบุชื่อผู้แก้ไข"
+              @keydown.enter.prevent="confirmEditorName"
+              @keydown.escape.prevent="cancelEditorName"
+              class="w-full bg-neutral-50 border border-neutral-250 rounded-xl px-4 py-2.5 text-sm text-center text-neutral-800 focus:outline-none focus:border-red-600 focus:bg-white transition-colors font-bold"
+              required />
+            <p x-show="editorPromptError" class="text-[10px] text-red-600 font-extrabold text-center"
+              x-text="editorPromptError"></p>
+          </div>
+
+          <div class="flex gap-2">
+            <button type="button" @click="cancelEditorName"
+              class="w-full bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold text-xs py-2.5 rounded-xl transition-all active:scale-95 border border-neutral-200">
+              ยกเลิก
+            </button>
+            <button type="button" @click="confirmEditorName"
+              class="w-full bg-red-600 hover:bg-red-500 text-white font-bold text-xs py-2.5 rounded-xl transition-all active:scale-95 shadow-md flex items-center justify-center gap-1.5">
+              <i data-lucide="save" class="w-3.5 h-3.5"></i>
+              <span>ยืนยัน</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -1627,6 +1674,11 @@
         backendFilter: 'All',
         isLoadingBackend: false,
         backendProposals: [],
+
+        showEditorPrompt: false,
+        editorPromptInput: '',
+        editorPromptError: '',
+        editorPromptDeferred: null,
 
         SPECIFIC_DEPARTMENTS: [
           "Accounting& Finance Dep.",
@@ -2112,12 +2164,9 @@
         },
 
         async handleSaveCorrections(proposal, updatedFields, confirmSamePerson) {
-          const editor = prompt('กรุณากรอกชื่อผู้ทำการแก้ไขข้อมูลนี้ / Please enter the name of the person who edited it:');
+          const editor = await this.promptEditorName();
           if (editor === null) return false;
-          if (!editor.trim()) {
-            alert("กรุณากรอกชื่อผู้ทำการแก้ไขเพื่อบันทึกข้อมูลครับ / Editor's name is required.");
-            return false;
-          }
+
           if (this.isRejectedDueToDept(proposal) && !confirmSamePerson) {
             alert('กรุณากดเช็กเพื่อยืนยันตัวตนว่าคุณเป็นผู้ยื่นข้อเสนอไอเดียคนเดียวกันกับแบบร่างตั้งต้นก่อนบันทึกข้อมูลครับ');
             return false;
@@ -2147,6 +2196,39 @@
             this.passcodeError = '';
           } else {
             this.passcodeError = 'รหัสผ่านไม่ถูกต้อง กรุณากรอกรหัสใหม่อีกครั้งครับ';
+          }
+        },
+
+        promptEditorName() {
+          this.editorPromptInput = '';
+          this.editorPromptError = '';
+          this.showEditorPrompt = true;
+          this.$nextTick(() => {
+            if (this.$refs.editorInput) this.$refs.editorInput.focus();
+          });
+          return new Promise(resolve => {
+            this.editorPromptDeferred = resolve;
+          });
+        },
+
+        confirmEditorName() {
+          if (!this.editorPromptInput.trim()) {
+            this.editorPromptError = 'กรุณากรอกชื่อผู้ทำการแก้ไขเพื่อบันทึกข้อมูลครับ / Editor\'s name is required.';
+            if (this.$refs.editorInput) this.$refs.editorInput.focus();
+            return;
+          }
+          this.showEditorPrompt = false;
+          if (this.editorPromptDeferred) {
+            this.editorPromptDeferred(this.editorPromptInput.trim());
+            this.editorPromptDeferred = null;
+          }
+        },
+
+        cancelEditorName() {
+          this.showEditorPrompt = false;
+          if (this.editorPromptDeferred) {
+            this.editorPromptDeferred(null);
+            this.editorPromptDeferred = null;
           }
         }
       }));
