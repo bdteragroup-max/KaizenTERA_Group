@@ -631,6 +631,49 @@
                 <span class="text-xs text-neutral-500 font-semibold">แก้ไขหรือลองคีย์เคสใหม่ของคุณเองได้ที่นี่</span>
               </div>
 
+              <!-- Action Buttons -->
+              <div class="grid grid-cols-2 gap-3 pt-2">
+                <button @click="handleClearForm"
+                  class="flex items-center justify-center gap-1.5 px-4 py-3 border border-neutral-200 hover:bg-neutral-50 text-neutral-600 text-xs font-bold rounded-xl transition-all active:scale-95">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  <span>ล้างข้อมูลทั้งหมด</span>
+                </button>
+                <button @click="handleCopyText" :disabled="!problemBefore || !solutionAfter"
+                  :class="(problemBefore && solutionAfter) ? 'bg-red-600 hover:bg-red-500 text-white cursor-pointer shadow-md' : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'"
+                  class="flex items-center justify-center gap-1.5 px-4 py-3 text-xs font-bold rounded-xl transition-all active:scale-95 shadow-sm">
+                  <template x-if="!isCopied">
+                    <div class="flex items-center gap-1.5">
+                      <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                      <span>คัดลอกข้อความ</span>
+                    </div>
+                  </template>
+                  <template x-if="isCopied">
+                    <div class="flex items-center gap-1.5">
+                      <i data-lucide="check" class="w-3.5 h-3.5 text-white"></i>
+                      <span>คัดลอกแล้ว!</span>
+                    </div>
+                  </template>
+                </button>
+              </div>
+
+              <!-- Evaluate with AI Button -->
+              <button @click="evaluateIdea" :disabled="isEvaluating || !problemBefore || !solutionAfter"
+                :class="(problemBefore && solutionAfter && !isEvaluating) ? 'bg-neutral-900 hover:bg-neutral-800 text-white cursor-pointer shadow-md active:scale-95' : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'"
+                class="w-full py-3.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all">
+                <template x-if="isEvaluating">
+                  <div class="flex items-center gap-1.5">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 text-white animate-spin"></i>
+                    <span class="animate-pulse">AI กำลังวิเคราะห์ความเป็นนวัตกรรม...</span>
+                  </div>
+                </template>
+                <template x-if="!isEvaluating">
+                  <div class="flex items-center gap-1.5">
+                    <i data-lucide="bot" class="w-4 h-4"></i>
+                    <span>ประเมินไอเดียนี้ด้วย AI</span>
+                  </div>
+                </template>
+              </button>
+
               <!-- Creator name -->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -788,6 +831,33 @@
                   <p :class="expectedBenefit ? 'text-neutral-800 font-semibold' : 'text-neutral-300 italic'"
                     class="text-sm leading-relaxed min-h-[32px]"
                     x-text="expectedBenefit || 'ผลประโยชน์ที่คาดว่าจะได้รับ...'"></p>
+                </div>
+
+                <!-- AI Evaluation UI Block -->
+                <div x-show="aiEvaluation" x-transition.opacity.duration.500ms class="bg-gradient-to-r from-red-50 to-orange-50 p-4 border-l-4 border-red-500 shadow-inner">
+                  <div class="flex items-center justify-between mb-2 border-b border-red-100 pb-2">
+                    <span class="flex items-center gap-1.5 text-xs font-black text-red-600 uppercase tracking-wider">
+                      <i data-lucide="bot" class="w-4 h-4"></i> AI Evaluation Score
+                    </span>
+                    <div class="text-right">
+                      <span class="text-2xl font-black text-red-600" x-text="aiEvaluation ? aiEvaluation.score + '%' : ''"></span>
+                    </div>
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-[10px] font-bold text-neutral-500 uppercase">ระดับไคเซ็น:</p>
+                    <p class="text-sm font-black text-red-700" x-text="aiEvaluation ? aiEvaluation.type : ''"></p>
+                    <p class="text-xs text-neutral-700 font-semibold leading-relaxed mt-2 mb-2" x-text="aiEvaluation ? aiEvaluation.feedback : ''"></p>
+                    
+                    <!-- AI Recommendation Box (แนะแนว) -->
+                    <template x-if="aiEvaluation && aiEvaluation.recommendation">
+                      <div class="mt-3 bg-white/70 p-3 rounded-xl border border-red-200/60 shadow-sm">
+                        <p class="text-[10px] font-bold text-red-600 uppercase flex items-center gap-1 mb-1">
+                          <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-red-500"></i> AI แนะแนวทางยกระดับ:
+                        </p>
+                        <p class="text-xs text-neutral-800 font-semibold leading-relaxed" x-text="aiEvaluation.recommendation"></p>
+                      </div>
+                    </template>
+                  </div>
                 </div>
 
                 <!-- Footer: White with red accents -->
@@ -1664,6 +1734,8 @@
         selectedDept: 'eng',
         selectedSpecificDept: 'Engineering Dep.',
         kaizenTitle: '',
+        isEvaluating: false,
+        aiEvaluation: null,
         problemBefore: '',
         problemCause: '',
         solutionAfter: '',
@@ -1958,6 +2030,7 @@
           this.problemCause = tpl.cause;
           this.solutionAfter = tpl.solution;
           this.expectedBenefit = tpl.benefit;
+          this.aiEvaluation = null;
           this.$nextTick(() => lucide.createIcons());
         },
 
@@ -1968,6 +2041,72 @@
           this.solutionAfter = '';
           this.expectedBenefit = '';
           this.kaizenCreator = '';
+          this.aiEvaluation = null;
+          this.$nextTick(() => lucide.createIcons());
+        },
+
+        async evaluateIdea() {
+          if (!this.problemBefore || !this.solutionAfter) return;
+          this.isEvaluating = true;
+          this.aiEvaluation = null;
+          this.$nextTick(() => lucide.createIcons());
+
+          // Simulate network/AI response time
+          await new Promise(resolve => setTimeout(resolve, 1500));
+
+          const problem = this.problemBefore.toLowerCase();
+          const solution = this.solutionAfter.toLowerCase();
+          const benefit = this.expectedBenefit ? this.expectedBenefit.toLowerCase() : '';
+
+          // Calculate basic Innovation Score
+          let score = 55; // Base score
+          
+          // Keywords for High-Tech (Kaizen Level 3)
+          const techKeywords = ['ai', 'iot', 'sensor', 'automation', 'ar', 'projection', 'glasses', 'chatbot', 'cloud', 'digital', 'dashboard', 'real-time', 'online', 'app', 'ระบบอัตโนมัติ', 'เซนเซอร์', 'แชทบอท', 'คลาวด์', 'โดรน', 'drone', 'mapping', '3d', 'รหัสสี', 'color code', 'smart', 'ทำนาย', 'predictive'];
+          // Keywords for Process Improvement (Kaizen Level 2)
+          const processKeywords = ['excel', 'google form', 'form', 'database', 'sheet', 'link', 'drive', 'โฟลเดอร์', 'แชร์', 'แชต', 'line', 'ไฟล์', 'จัดเก็บ', 'คู่มือ', 'แบบฟอร์ม', 'checklist', 'เช็คลิสต์', 'ซอง', 'ถาด', 'กล่องแยก'];
+          // Keywords for Organizing / 5S (Kaizen Level 1)
+          const basicKeywords = ['บอร์ด', 'shadow board', 'จัดระเบียบ', 'ค้นหา', 'ทำความสะอาด', 'เครื่องมือ', 'ป้าย', 'สติกเกอร์', 'ติดป้าย', 'ตู้', 'ลิ้นชัก', 'ชั้นวาง'];
+
+          let techCount = techKeywords.filter(kw => problem.includes(kw) || solution.includes(kw) || benefit.includes(kw)).length;
+          let processCount = processKeywords.filter(kw => problem.includes(kw) || solution.includes(kw) || benefit.includes(kw)).length;
+          let basicCount = basicKeywords.filter(kw => problem.includes(kw) || solution.includes(kw) || benefit.includes(kw)).length;
+
+          score += techCount * 8;
+          score += processCount * 4;
+          score += basicCount * 2;
+
+          // Cap score between 60% and 98%
+          if (score < 60) score = 60 + Math.floor(Math.random() * 8);
+          if (score > 98) score = 95 + Math.floor(Math.random() * 4);
+
+          // Determine Level & Type
+          let type = '';
+          let feedback = '';
+          let recommendation = '';
+
+          if (techCount > 0 || score >= 80) {
+            type = 'ระดับ 3: นวัตกรรมเทคโนโลยี (Kaizen Level 3)';
+            feedback = 'ไอเดียยอดเยี่ยมมาก! การนำเทคโนโลยีและระบบอัตโนมัติมาแก้ปัญหาสามารถช่วยยกระดับความแม่นยำ ลดความผิดพลาด และลดการสูญเสียของงานได้อย่างมีนัยสำคัญ ถือเป็นนวัตกรรมที่คุ้มค่าแก่การประยุกต์ใช้ในองค์กร';
+            recommendation = 'ควรระบุแผนการทดสอบระบบตัวจำลอง (Pilot Test) รวมถึงกำหนดวิธีการวัดผลเวลา/ความถูกต้องที่ชัดเจนก่อนปล่อยใช้งานจริงเต็มรูปแบบ';
+          } else if (processCount > 0 || score >= 70) {
+            type = 'ระดับ 2: ปรับปรุงกระบวนการทำงาน (Kaizen Level 2)';
+            feedback = 'เป็นไอเดียที่ดีมาก! การปรับปรุงขั้นตอน ประสานงานผ่านแบบฟอร์มออนไลน์ หรือเครื่องมือแชร์ช่วยแก้ไขการรอคอย (Waiting) และงานแก้ไขได้อย่างดี ช่วยประหยัดเวลาและลดขั้นตอนกระดาษ';
+            recommendation = 'แนะนำให้พิจารณาเพิ่มเทคโนโลยีสแกนอัตโนมัติ (เช่น QR Code, Barcode) หรือลิงก์การแจ้งเตือนอัตโนมัติผ่าน LINE Notify เพื่อยกระดับความเร็วขึ้นอีกขั้น';
+          } else {
+            type = 'ระดับ 1: จัดระเบียบหน้างาน & 5ส (Kaizen Level 1)';
+            feedback = 'เป็นการปรับปรุงพื้นฐานที่ดีตามหลัก 5ส ช่วยเพิ่มความปลอดภัยและลดเวลาเคลื่อนไหวที่สูญเปล่า (Motion) ในการหาเครื่องมือ/พัสดุ ป้องกันอุปกรณ์สูญหาย';
+            recommendation = 'หากต้องการคะแนนเพิ่ม แนะนำให้ขยายไอเดียสู่ระบบดิจิทัล เช่น แทนที่บอร์ดเงาธรรมดา ลองจำแนกรหัสผ่านคลังสินค้าออนไลน์เพื่อให้เห็นสต็อกแบบทันที';
+          }
+
+          this.aiEvaluation = {
+            score: score,
+            type: type,
+            feedback: feedback,
+            recommendation: recommendation
+          };
+
+          this.isEvaluating = false;
           this.$nextTick(() => lucide.createIcons());
         },
 
