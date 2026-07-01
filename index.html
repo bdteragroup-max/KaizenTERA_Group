@@ -1662,7 +1662,7 @@
         activeTab: 'presentation',
         currentSlideIndex: 0,
         selectedDept: 'eng',
-        selectedSpecificDept: 'Accounting& Finance Dep.',
+        selectedSpecificDept: 'Engineering Dep.',
         kaizenTitle: '',
         problemBefore: '',
         problemCause: '',
@@ -1917,6 +1917,19 @@
           this.$watch('isLoadingBackend', () => this.$nextTick(() => lucide.createIcons()));
           this.$watch('showUnlockModal', () => this.$nextTick(() => lucide.createIcons()));
           this.$watch('backendProposals', () => this.$nextTick(() => lucide.createIcons()));
+
+          this.$watch('selectedSpecificDept', (val) => {
+            const groupDept = this.DEPT_MAPPING[val];
+            if (groupDept) this.selectedDept = groupDept;
+          });
+
+          this.$watch('selectedDept', (val) => {
+            const currentGroup = this.DEPT_MAPPING[this.selectedSpecificDept];
+            if (currentGroup !== val) {
+              const found = Object.keys(this.DEPT_MAPPING).find(key => this.DEPT_MAPPING[key] === val);
+              if (found) this.selectedSpecificDept = found;
+            }
+          });
 
           this.$nextTick(() => lucide.createIcons());
         },
