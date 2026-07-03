@@ -631,48 +631,7 @@
                 <span class="text-xs text-neutral-500 font-semibold">แก้ไขหรือลองคีย์เคสใหม่ของคุณเองได้ที่นี่</span>
               </div>
 
-              <!-- Action Buttons -->
-              <div class="grid grid-cols-2 gap-3 pt-2">
-                <button @click="handleClearForm"
-                  class="flex items-center justify-center gap-1.5 px-4 py-3 border border-neutral-200 hover:bg-neutral-50 text-neutral-600 text-xs font-bold rounded-xl transition-all active:scale-95">
-                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                  <span>ล้างข้อมูลทั้งหมด</span>
-                </button>
-                <button @click="handleCopyText" :disabled="!problemBefore || !solutionAfter"
-                  :class="(problemBefore && solutionAfter) ? 'bg-red-600 hover:bg-red-500 text-white cursor-pointer shadow-md' : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'"
-                  class="flex items-center justify-center gap-1.5 px-4 py-3 text-xs font-bold rounded-xl transition-all active:scale-95 shadow-sm">
-                  <template x-if="!isCopied">
-                    <div class="flex items-center gap-1.5">
-                      <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                      <span>คัดลอกข้อความ</span>
-                    </div>
-                  </template>
-                  <template x-if="isCopied">
-                    <div class="flex items-center gap-1.5">
-                      <i data-lucide="check" class="w-3.5 h-3.5 text-white"></i>
-                      <span>คัดลอกแล้ว!</span>
-                    </div>
-                  </template>
-                </button>
-              </div>
 
-              <!-- Evaluate with AI Button -->
-              <button @click="evaluateIdea" :disabled="isEvaluating || !problemBefore || !solutionAfter"
-                :class="(problemBefore && solutionAfter && !isEvaluating) ? 'bg-neutral-900 hover:bg-neutral-800 text-white cursor-pointer shadow-md active:scale-95' : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'"
-                class="w-full py-3.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all">
-                <template x-if="isEvaluating">
-                  <div class="flex items-center gap-1.5">
-                    <i data-lucide="refresh-cw" class="w-4 h-4 text-white animate-spin"></i>
-                    <span class="animate-pulse">AI กำลังวิเคราะห์ความเป็นนวัตกรรม...</span>
-                  </div>
-                </template>
-                <template x-if="!isEvaluating">
-                  <div class="flex items-center gap-1.5">
-                    <i data-lucide="bot" class="w-4 h-4"></i>
-                    <span>ประเมินไอเดียนี้ด้วย AI</span>
-                  </div>
-                </template>
-              </button>
 
               <!-- Creator name -->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -744,8 +703,9 @@
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 <span>ล้างข้อมูลทั้งหมด</span>
               </button>
-              <button @click="handleCopyText"
-                class="flex items-center justify-center gap-1.5 px-4 py-3 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-xl transition-all active:scale-95 shadow-sm">
+              <button @click="handleCopyText" :disabled="!problemBefore || !solutionAfter"
+                :class="(problemBefore && solutionAfter) ? 'bg-neutral-900 hover:bg-neutral-800 text-white cursor-pointer shadow-md' : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'"
+                class="flex items-center justify-center gap-1.5 px-4 py-3 text-xs font-bold rounded-xl transition-all active:scale-95 shadow-sm">
                 <template x-if="!isCopied">
                   <div class="flex items-center gap-1.5">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
@@ -754,12 +714,30 @@
                 </template>
                 <template x-if="isCopied">
                   <div class="flex items-center gap-1.5">
-                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-white"></i>
                     <span>คัดลอกแล้ว!</span>
                   </div>
                 </template>
               </button>
             </div>
+
+            <!-- Evaluate with AI Button -->
+            <button @click="evaluateIdea" :disabled="isEvaluating || !problemBefore || !solutionAfter"
+              :class="(problemBefore && solutionAfter && !isEvaluating) ? 'bg-neutral-900 hover:bg-neutral-800 text-white cursor-pointer shadow-md active:scale-95' : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'"
+              class="w-full py-3.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all mt-3">
+              <template x-if="isEvaluating">
+                <div class="flex items-center gap-1.5">
+                  <i data-lucide="refresh-cw" class="w-4 h-4 text-white animate-spin"></i>
+                  <span class="animate-pulse">AI กำลังวิเคราะห์ความเป็นนวัตกรรม...</span>
+                </div>
+              </template>
+              <template x-if="!isEvaluating">
+                <div class="flex items-center gap-1.5">
+                  <i data-lucide="bot" class="w-4 h-4"></i>
+                  <span>ประเมินไอเดียนี้ด้วย AI</span>
+                </div>
+              </template>
+            </button>
           </div>
           <!-- END LEFT FORM -->
 
