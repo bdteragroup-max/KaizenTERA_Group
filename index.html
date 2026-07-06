@@ -812,27 +812,31 @@
                 </div>
 
                 <!-- AI Evaluation UI Block -->
-                <div x-show="aiEvaluation" x-transition.opacity.duration.500ms class="bg-gradient-to-r from-red-50 to-orange-50 p-4 border-l-4 border-red-500 shadow-inner">
+                <div x-show="aiEvaluation" x-transition.opacity.duration.500ms
+                  class="bg-gradient-to-r from-red-50 to-orange-50 p-4 border-l-4 border-red-500 shadow-inner">
                   <div class="flex items-center justify-between mb-2 border-b border-red-100 pb-2">
                     <span class="flex items-center gap-1.5 text-xs font-black text-red-600 uppercase tracking-wider">
                       <i data-lucide="bot" class="w-4 h-4"></i> AI Evaluation Score
                     </span>
                     <div class="text-right">
-                      <span class="text-2xl font-black text-red-600" x-text="aiEvaluation ? aiEvaluation.score + '%' : ''"></span>
+                      <span class="text-2xl font-black text-red-600"
+                        x-text="aiEvaluation ? aiEvaluation.score + '%' : ''"></span>
                     </div>
                   </div>
                   <div class="space-y-1">
                     <p class="text-[10px] font-bold text-neutral-500 uppercase">ระดับไคเซ็น:</p>
                     <p class="text-sm font-black text-red-700" x-text="aiEvaluation ? aiEvaluation.type : ''"></p>
-                    <p class="text-xs text-neutral-700 font-semibold leading-relaxed mt-2 mb-2" x-text="aiEvaluation ? aiEvaluation.feedback : ''"></p>
-                    
+                    <p class="text-xs text-neutral-700 font-semibold leading-relaxed mt-2 mb-2"
+                      x-text="aiEvaluation ? aiEvaluation.feedback : ''"></p>
+
                     <!-- AI Recommendation Box (แนะแนว) -->
                     <template x-if="aiEvaluation && aiEvaluation.recommendation">
                       <div class="mt-3 bg-white/70 p-3 rounded-xl border border-red-200/60 shadow-sm">
                         <p class="text-[10px] font-bold text-red-600 uppercase flex items-center gap-1 mb-1">
                           <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-red-500"></i> AI แนะแนวทางยกระดับ:
                         </p>
-                        <p class="text-xs text-neutral-800 font-semibold leading-relaxed" x-text="aiEvaluation.recommendation"></p>
+                        <p class="text-xs text-neutral-800 font-semibold leading-relaxed"
+                          x-text="aiEvaluation.recommendation"></p>
                       </div>
                     </template>
                   </div>
@@ -1371,223 +1375,297 @@
 
               <!-- Individual Backend proposal card with its own scoped Alpine state for feedback/approver/isEditing -->
               <div x-data="{ 
+                  isExpanded: false,
                   feedback: proposal.feedback || '', 
                   approver: proposal.approver || '', 
                   pendingStatus: proposal.status || 'Pending',
                   rejectedDueToDepartment: proposal.rejectedDueToDepartment || false,
                   isSaving: false,
-                  isSaved: false
+                  isSaved: false,
+                  aiSuggestion: null,
+                  isRunningAI: false,
+                  runAIAssistant() {
+                    this.isRunningAI = true;
+                    this.aiSuggestion = null;
+                    setTimeout(() => {
+                      const result = analyzeProposalForAdmin(proposal);
+                      this.aiSuggestion = result;
+                      this.isRunningAI = false;
+                      $nextTick(() => lucide.createIcons());
+                    }, 700);
+                  },
+                  applyAISuggestion() {
+                    if (!this.aiSuggestion) return;
+                    this.feedback = this.aiSuggestion.feedback;
+                    this.pendingStatus = this.aiSuggestion.status;
+                    this.isSaved = false;
+                  }
                 }"
-                class="border border-neutral-200 rounded-2xl p-5 space-y-4 hover:border-neutral-300 transition-colors bg-white relative text-xs">
-                <div
-                  class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-100 pb-3 gap-2">
-                  <div>
-                    <div class="flex items-center gap-2">
+                class="border border-neutral-200 rounded-2xl p-5 hover:border-neutral-300 transition-all bg-white relative text-xs shadow-sm hover:shadow-md">
+
+                <!-- Accordion Toggle Header Area -->
+                <div @click="isExpanded = !isExpanded; $nextTick(() => lucide.createIcons());"
+                  class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer select-none group pb-3">
+                  <div class="flex-grow space-y-1.5">
+                    <div class="flex items-center gap-2 flex-wrap text-[10px] font-bold">
                       <span
                         class="text-[9px] uppercase font-bold bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded border border-neutral-200">
                         แถวที่ <span x-text="proposal.row"></span>
                       </span>
-                      <span class="text-[10px] text-neutral-400 font-bold" x-text="proposal.timestamp"></span>
-                    </div>
-                    <h4 class="text-md font-bold text-neutral-900 mt-1" x-text="proposal.title"></h4>
-                  </div>
-
-                  <div class="flex flex-col items-end gap-1">
-                    <span
-                      :class="proposal.status === 'Approved' ? 'bg-green-50 border-green-200 text-green-700' : (proposal.status === 'Rejected' ? 'bg-red-50 border-red-200 text-red-700' : (proposal.status === 'Revision' ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-yellow-50 border-yellow-250 text-yellow-750'))"
-                      class="px-2.5 py-1 rounded-full text-xs font-black w-fit border">
-                      <span
-                        x-text="proposal.status === 'Approved' ? 'อนุมัติแล้ว' : (proposal.status === 'Rejected' ? 'ปฏิเสธ' : (proposal.status === 'Revision' ? 'ต้องแก้ไขเพิ่มเติม' : 'รอการประเมิน'))"></span>
-                    </span>
-                    <span class="text-[10px] text-neutral-500 font-bold flex items-center gap-1"
-                      x-show="proposal.approver">
-                      <i data-lucide="user" class="w-3 h-3 text-neutral-400"></i>
-                      ผู้ประเมิน: <span class="text-neutral-700 font-black" x-text="proposal.approver"></span>
-                    </span>
-                    <span class="text-[10px] text-red-600 font-bold flex items-center gap-1 mt-0.5 animate-pulse"
-                      x-show="proposal.rejectedDueToDepartment">
-                      <i data-lucide="alert-triangle" class="w-3 h-3"></i>
-                      <span>ปฏิเสธเนื่องจากแผนกผิด</span>
-                    </span>
-                  </div>
-                </div>
-
-                <div
-                  class="grid grid-cols-3 gap-4 text-xs font-bold bg-neutral-50 p-2.5 rounded-xl border border-neutral-200">
-                  <div>
-                    <span class="block text-[9px] uppercase text-neutral-400">ผู้เสนอ:</span>
-                    <span class="text-neutral-800" x-text="proposal.creator"></span>
-                  </div>
-                  <div>
-                    <span class="block text-[9px] uppercase text-neutral-400">แผนก:</span>
-                    <span class="text-neutral-800" x-text="proposal.department"></span>
-                  </div>
-                  <div>
-                    <span class="block text-[9px] uppercase text-neutral-400">ผู้แก้ไขล่าสุด:</span>
-                    <span class="text-neutral-800" x-text="proposal.editorName || '-'"></span>
-                  </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div class="bg-neutral-50 border border-neutral-200 p-3 rounded-xl">
-                    <span class="font-bold text-neutral-500 block mb-1">ปัญหาก่อนปรับปรุง (Before):</span>
-                    <p class="text-neutral-700 font-semibold leading-relaxed" x-text="proposal.problemBefore"></p>
-                    <span class="font-bold text-neutral-500 block mt-2 mb-1">สาเหตุหลัก:</span>
-                    <p class="text-neutral-700 font-semibold leading-relaxed" x-text="proposal.problemCause"></p>
-                  </div>
-                  <div class="bg-red-50/20 border border-red-100 p-3 rounded-xl">
-                    <span class="font-bold text-red-600 block mb-1">วิธีการปรับปรุงใหม่ (After):</span>
-                    <p class="text-neutral-700 font-semibold leading-relaxed" x-text="proposal.solutionAfter"></p>
-                    <span class="font-bold text-neutral-500 block mt-2 mb-1">ผลดีที่ได้รับ:</span>
-                    <p class="text-neutral-700 font-semibold leading-relaxed" x-text="proposal.expectedBenefit"></p>
-                  </div>
-                </div>
-
-                <!-- Approver Name -->
-                <div class="pt-2 border-t border-neutral-100 space-y-2">
-                  <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-                    ชื่อผู้ประเมิน / ผู้อนุมัติ <span class="text-red-600 font-black">*</span>:
-                  </label>
-                  <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
-                      <i data-lucide="user" class="w-3.5 h-3.5"></i>
-                    </span>
-                    <input type="text" x-model="approver"
-                      placeholder="กรอกชื่อผู้ประเมิน / ผู้อนุมัติ (จำเป็นต้องกรอกก่อนบันทึก)"
-                      class="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-9 pr-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-red-600 focus:bg-white transition-all font-semibold" />
-                  </div>
-                </div>
-
-                <!-- Feedback / Comment -->
-                <div class="pt-2 border-t border-neutral-100 space-y-2">
-                  <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-                    ความคิดเห็น / ข้อเสนอแนะสำหรับผู้ยื่น:
-                  </label>
-                  <textarea rows="3" x-model="feedback"
-                    placeholder="กรอกคำแนะนำ เช่น ให้เพิ่มรายละเอียดผลลัพธ์, ระบุระยะเวลาดำเนินการ..."
-                    class="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-red-600 focus:bg-white transition-colors resize-y leading-relaxed"></textarea>
-                </div>
-
-                <!-- Status Selector -->
-                <div class="pt-2 border-t border-neutral-100 space-y-2">
-                  <label
-                    class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <i data-lucide="git-branch" class="w-3 h-3"></i>
-                    เลือกสถานะที่ต้องการบันทึก:
-                  </label>
-
-                  <!-- Current saved status indicator -->
-                  <div class="flex items-center gap-1.5 text-[10px] text-neutral-400 font-semibold mb-1">
-                    <span>สถานะปัจจุบันในระบบ:</span>
-                    <span
-                      :class="proposal.status === 'Approved' ? 'text-green-600 font-black' : (proposal.status === 'Rejected' ? 'text-red-600 font-black' : (proposal.status === 'Revision' ? 'text-orange-600 font-black' : 'text-yellow-600 font-black'))"
-                      x-text="proposal.status === 'Approved' ? 'อนุมัติแล้ว' : (proposal.status === 'Rejected' ? 'ปฏิเสธ' : (proposal.status === 'Revision' ? 'ต้องแก้ไขเพิ่มเติม' : 'รอการประเมิน'))"></span>
-                    <template x-if="pendingStatus !== proposal.status">
-                      <span class="flex items-center gap-1 text-neutral-400">
-                        <i data-lucide="arrow-right" class="w-3 h-3"></i>
-                        <span class="font-black"
-                          :class="pendingStatus === 'Approved' ? 'text-green-600' : (pendingStatus === 'Rejected' ? 'text-red-600' : (pendingStatus === 'Revision' ? 'text-orange-600' : 'text-yellow-600'))"
-                          x-text="pendingStatus === 'Approved' ? 'อนุมัติแล้ว' : (pendingStatus === 'Rejected' ? 'ปฏิเสธ' : (pendingStatus === 'Revision' ? 'ต้องแก้ไขเพิ่มเติม' : 'รอการประเมิน'))"></span>
-                        <span class="italic">(ยังไม่บันทึก)</span>
+                      <span class="text-neutral-400" x-text="proposal.timestamp"></span>
+                      <span class="text-neutral-500 bg-neutral-50 px-2 py-0.5 rounded border border-neutral-150">
+                        ผู้เสนอ: <span class="text-neutral-800 font-extrabold" x-text="proposal.creator"></span> (<span
+                          x-text="proposal.department"></span>)
                       </span>
-                    </template>
+                    </div>
+                    <!-- Large bold Title -->
+                    <h4
+                      class="text-base md:text-lg font-black text-neutral-900 group-hover:text-red-600 transition-colors"
+                      x-text="proposal.title"></h4>
                   </div>
 
-                  <!-- Status Toggle Buttons -->
-                  <div class="grid grid-cols-3 gap-2">
-                    <!-- Reject -->
-                    <button type="button" @click="pendingStatus = 'Rejected'; isSaved = false;"
-                      :class="pendingStatus === 'Rejected' ? 'bg-red-600 text-white border-red-600 shadow-md' : 'bg-white text-red-600 border-red-300 hover:bg-red-50'"
-                      class="flex flex-col items-center gap-1 py-2.5 px-2 border-2 rounded-xl text-[10px] font-black transition-all active:scale-95">
-                      <i data-lucide="x-circle" class="w-4 h-4"></i>
-                      <span>ปฏิเสธ</span>
-                      <span class="font-normal opacity-75">Reject</span>
-                    </button>
+                  <div class="flex items-center gap-3 shrink-0">
+                    <div class="flex flex-col items-end gap-1 text-right">
+                      <span
+                        :class="proposal.status === 'Approved' ? 'bg-green-50 border-green-200 text-green-700' : (proposal.status === 'Rejected' ? 'bg-red-50 border-red-200 text-red-700' : (proposal.status === 'Revision' ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-yellow-50 border-yellow-250 text-yellow-750'))"
+                        class="px-2.5 py-1 rounded-full text-xs font-black border uppercase tracking-wider">
+                        <span
+                          x-text="proposal.status === 'Approved' ? 'อนุมัติแล้ว' : (proposal.status === 'Rejected' ? 'ปฏิเสธ' : (proposal.status === 'Revision' ? 'ต้องแก้ไขเพิ่มเติม' : 'รอการประเมิน'))"></span>
+                      </span>
+                      <span class="text-[10px] text-neutral-500 font-bold flex items-center gap-1 mt-0.5 justify-end"
+                        x-show="proposal.approver">
+                        <i data-lucide="user-check" class="w-3.5 h-3.5 text-neutral-400"></i>
+                        ผู้ประเมิน: <span class="text-neutral-700 font-black" x-text="proposal.approver"></span>
+                      </span>
+                      <span
+                        class="text-[10px] text-red-600 font-bold flex items-center gap-1 mt-0.5 animate-pulse justify-end"
+                        x-show="proposal.rejectedDueToDepartment">
+                        <i data-lucide="alert-triangle" class="w-3 h-3"></i>
+                        <span>ปฏิเสธเนื่องจากแผนกผิด</span>
+                      </span>
+                    </div>
 
-                    <!-- Revision -->
-                    <button type="button" @click="pendingStatus = 'Revision'; isSaved = false;"
-                      :class="pendingStatus === 'Revision' ? 'bg-orange-500 text-white border-orange-500 shadow-md' : 'bg-white text-orange-600 border-orange-300 hover:bg-orange-50'"
-                      class="flex flex-col items-center gap-1 py-2.5 px-2 border-2 rounded-xl text-[10px] font-black transition-all active:scale-95">
-                      <i data-lucide="alert-circle" class="w-4 h-4"></i>
-                      <span>ขอแก้ไข</span>
-                      <span class="font-normal opacity-75">Revision</span>
-                    </button>
+                    <!-- Chevron expand/collapse icon -->
+                    <div class="text-neutral-400 group-hover:text-neutral-600 transition-colors p-1">
+                      <i :data-lucide="isExpanded ? 'chevron-up' : 'chevron-down'" class="w-5 h-5"></i>
+                    </div>
+                  </div>
+                </div>
 
-                    <!-- Approve -->
-                    <button type="button"
-                      @click="pendingStatus = 'Approved'; isSaved = false; rejectedDueToDepartment = false;"
-                      :class="pendingStatus === 'Approved' ? 'bg-green-600 text-white border-green-600 shadow-md' : 'bg-white text-green-600 border-green-300 hover:bg-green-50'"
-                      class="flex flex-col items-center gap-1 py-2.5 px-2 border-2 rounded-xl text-[10px] font-black transition-all active:scale-95">
-                      <i data-lucide="check-circle" class="w-4 h-4"></i>
-                      <span>อนุมัติ</span>
-                      <span class="font-normal opacity-75">Approve</span>
-                    </button>
+                <!-- Expandable Details Area -->
+                <div x-show="isExpanded" x-transition.opacity.duration.300ms
+                  class="pt-4 border-t border-neutral-200 space-y-4">
+
+                  <div
+                    class="grid grid-cols-3 gap-4 text-xs font-bold bg-neutral-50 p-2.5 rounded-xl border border-neutral-200">
+                    <div>
+                      <span class="block text-[9px] uppercase text-neutral-400">ผู้เสนอ:</span>
+                      <span class="text-neutral-800" x-text="proposal.creator"></span>
+                    </div>
+                    <div>
+                      <span class="block text-[9px] uppercase text-neutral-400">แผนก:</span>
+                      <span class="text-neutral-800" x-text="proposal.department"></span>
+                    </div>
+                    <div>
+                      <span class="block text-[9px] uppercase text-neutral-400">ผู้แก้ไขล่าสุด:</span>
+                      <span class="text-neutral-800" x-text="proposal.editorName || '-'"></span>
+                    </div>
                   </div>
 
-                  <!-- Dept error checkbox (only relevant for Rejected) -->
-                  <div x-show="pendingStatus === 'Rejected'"
-                    class="flex items-start gap-2 pt-1 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
-                    <input type="checkbox" x-model="rejectedDueToDepartment" :id="'admin-dept-err-' + proposal.row"
-                      class="mt-0.5 rounded border-red-300 text-red-600 focus:ring-red-500 w-4 h-4 cursor-pointer shrink-0" />
-                    <label :for="'admin-dept-err-' + proposal.row"
-                      class="text-[10px] font-bold text-red-700 cursor-pointer leading-tight">
-                      ปฏิเสธเนื่องจากระบุแผนกงานผิดพลาดเท่านั้น<br>
-                      <span class="font-normal text-red-500">(เปิดให้ผู้เสนอสามารถแก้ไขแผนกและยื่นใหม่ได้)</span>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div class="bg-neutral-50 border border-neutral-200 p-3 rounded-xl">
+                      <span class="font-bold text-neutral-500 block mb-1">ปัญหาก่อนปรับปรุง (Before):</span>
+                      <p class="text-neutral-700 font-semibold leading-relaxed" x-text="proposal.problemBefore"></p>
+                      <span class="font-bold text-neutral-500 block mt-2 mb-1">สาเหตุหลัก:</span>
+                      <p class="text-neutral-700 font-semibold leading-relaxed" x-text="proposal.problemCause"></p>
+                    </div>
+                    <div class="bg-red-50/20 border border-red-100 p-3 rounded-xl">
+                      <span class="font-bold text-red-600 block mb-1">วิธีการปรับปรุงใหม่ (After):</span>
+                      <p class="text-neutral-700 font-semibold leading-relaxed" x-text="proposal.solutionAfter"></p>
+                      <span class="font-bold text-neutral-500 block mt-2 mb-1">ผลดีที่ได้รับ:</span>
+                      <p class="text-neutral-700 font-semibold leading-relaxed" x-text="proposal.expectedBenefit"></p>
+                    </div>
+                  </div>
+
+                  <!-- Approver Name -->
+                  <div class="pt-2 border-t border-neutral-100 space-y-2">
+                    <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                      ชื่อผู้ประเมิน / ผู้อนุมัติ <span class="text-red-600 font-black">*</span>:
                     </label>
-                  </div>
-                </div>
-
-                <!-- Save Button Row -->
-                <div class="pt-3 border-t border-neutral-100 space-y-2">
-
-                  <!-- Success Banner -->
-                  <div x-show="isSaved"
-                    class="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-xl text-[10px] font-bold">
-                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5 shrink-0"></i>
-                    <span>บันทึกสถานะลง Google Sheets สำเร็จ!</span>
+                    <div class="relative">
+                      <span
+                        class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                        <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                      </span>
+                      <input type="text" x-model="approver"
+                        placeholder="กรอกชื่อผู้ประเมิน / ผู้อนุมัติ (จำเป็นต้องกรอกก่อนบันทึก)"
+                        class="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-9 pr-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-red-600 focus:bg-white transition-all font-semibold" />
+                    </div>
                   </div>
 
-                  <div class="flex items-center justify-between gap-3">
-                    <!-- Status change hint -->
-                    <p class="text-[10px] text-neutral-400 font-semibold leading-tight">
-                      เลือกสถานะด้านบน → กรอกชื่อผู้ประเมิน → กด <strong>บันทึก</strong>
-                    </p>
+                  <!-- Feedback / Comment with AI Assistant -->
+                  <div class="pt-2 border-t border-neutral-100 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                        ความคิดเห็น / ข้อเสนอแนะสำหรับผู้ยื่น:
+                      </label>
+                      <button type="button" @click="runAIAssistant(); $nextTick(() => lucide.createIcons());"
+                        :disabled="isRunningAI"
+                        class="flex items-center gap-1 px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-bold rounded-lg border border-red-200 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed">
+                        <i :data-lucide="isRunningAI ? 'refresh-cw' : 'bot'"
+                          :class="isRunningAI ? 'w-3.5 h-3.5 animate-spin text-red-600' : 'w-3.5 h-3.5 animate-pulse text-red-600'"></i>
+                        <span x-text="isRunningAI ? 'กำลังวิเคราะห์...' : 'วิเคราะห์ด้วย AI (AI Help)'"></span>
+                      </button>
+                    </div>
 
-                    <button type="button" @click="
-                        if (!approver.trim()) {
-                          alert('กรุณากรอกชื่อผู้ประเมิน / ผู้อนุมัติก่อนบันทึกครับ');
-                          return;
-                        }
-                        isSaving = true;
-                        isSaved = false;
-                        (async () => {
-                          try {
-                            await handleUpdateStatus(proposal.row, pendingStatus, feedback, approver.trim(), pendingStatus === 'Rejected' ? rejectedDueToDepartment : false);
-                            await new Promise(r => setTimeout(r, 1200)); // รอ Apps Script เขียนลง Sheet ให้เสร็จก่อนดึงกลับมา
-                            await fetchLiveProposals();
-                            isSaved = true;
-                          } catch (e) {
-                            console.error('Save failed', e);
-                            alert('บันทึกไม่สำเร็จ กรุณาลองใหม่');
-                          } finally {
-                            isSaving = false; // ย้ายมาไว้ใน finally กัน isSaving ค้างตลอดไปถ้า error
+                    <!-- AI Suggestion Box: kept visually and structurally separate from the actual comment/approver fields -->
+                    <div x-show="aiSuggestion" x-transition.opacity.duration.300ms
+                      class="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl p-3 space-y-2">
+                      <div class="flex items-center justify-between">
+                        <span
+                          class="flex items-center gap-1.5 text-[10px] font-black text-indigo-700 uppercase tracking-wider">
+                          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                          <span>ผลวิเคราะห์จาก AI (คำแนะนำเบื้องต้น ยังไม่ถูกบันทึก)</span>
+                        </span>
+                        <span x-show="aiSuggestion"
+                          :class="aiSuggestion && aiSuggestion.status === 'Approved' ? 'bg-green-100 text-green-700 border-green-200' : (aiSuggestion && aiSuggestion.status === 'Rejected' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-orange-100 text-orange-700 border-orange-200')"
+                          class="px-2 py-0.5 rounded-full text-[9px] font-black border uppercase tracking-wider shrink-0"
+                          x-text="aiSuggestion ? (aiSuggestion.status === 'Approved' ? 'แนะนำ: อนุมัติ' : (aiSuggestion.status === 'Rejected' ? 'แนะนำ: ปฏิเสธ' : 'แนะนำ: ขอแก้ไข')) : ''"></span>
+                      </div>
+                      <p class="text-xs text-indigo-900 font-medium leading-relaxed italic"
+                        x-text="aiSuggestion ? aiSuggestion.feedback : ''"></p>
+                      <div class="flex justify-end pt-1">
+                        <button type="button" @click="applyAISuggestion(); $nextTick(() => lucide.createIcons());"
+                          class="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold rounded-lg transition-all active:scale-95">
+                          <i data-lucide="clipboard-check" class="w-3.5 h-3.5"></i>
+                          <span>นำคำแนะนำนี้ไปใช้ในช่องความคิดเห็น</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <textarea rows="3" x-model="feedback"
+                      placeholder="กรอกคำแนะนำ เช่น ให้เพิ่มรายละเอียดผลลัพธ์, ระบุระยะเวลาดำเนินการ..."
+                      class="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-red-600 focus:bg-white transition-colors resize-y leading-relaxed"></textarea>
+                  </div>
+
+                  <!-- Status Selector -->
+                  <div class="pt-2 border-t border-neutral-100 space-y-2">
+                    <label
+                      class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <i data-lucide="git-branch" class="w-3 h-3"></i>
+                      เลือกสถานะที่ต้องการบันทึก:
+                    </label>
+
+                    <!-- Current saved status indicator -->
+                    <div class="flex items-center gap-1.5 text-[10px] text-neutral-400 font-semibold mb-1">
+                      <span>สถานะปัจจุบันในระบบ:</span>
+                      <span
+                        :class="proposal.status === 'Approved' ? 'text-green-600 font-black' : (proposal.status === 'Rejected' ? 'text-red-600 font-black' : (proposal.status === 'Revision' ? 'text-orange-600 font-black' : 'text-yellow-600 font-black'))"
+                        x-text="proposal.status === 'Approved' ? 'อนุมัติแล้ว' : (proposal.status === 'Rejected' ? 'ปฏิเสธ' : (proposal.status === 'Revision' ? 'ต้องแก้ไขเพิ่มเติม' : 'รอการประเมิน'))"></span>
+                      <template x-if="pendingStatus !== proposal.status">
+                        <span class="flex items-center gap-1 text-neutral-400">
+                          <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                          <span class="font-black"
+                            :class="pendingStatus === 'Approved' ? 'text-green-600' : (pendingStatus === 'Rejected' ? 'text-red-600' : (pendingStatus === 'Revision' ? 'text-orange-600' : 'text-yellow-600'))"
+                            x-text="pendingStatus === 'Approved' ? 'อนุมัติแล้ว' : (pendingStatus === 'Rejected' ? 'ปฏิเสธ' : (pendingStatus === 'Revision' ? 'ต้องแก้ไขเพิ่มเติม' : 'รอการประเมิน'))"></span>
+                          <span class="italic">(ยังไม่บันทึก)</span>
+                        </span>
+                      </template>
+                    </div>
+
+                    <!-- Status Toggle Buttons -->
+                    <div class="grid grid-cols-3 gap-2">
+                      <!-- Reject -->
+                      <button type="button" @click="pendingStatus = 'Rejected'; isSaved = false;"
+                        :class="pendingStatus === 'Rejected' ? 'bg-red-600 text-white border-red-600 shadow-md' : 'bg-white text-red-600 border-red-300 hover:bg-red-50'"
+                        class="flex flex-col items-center gap-1 py-2.5 px-2 border-2 rounded-xl text-[10px] font-black transition-all active:scale-95">
+                        <i data-lucide="x-circle" class="w-4 h-4"></i>
+                        <span>ปฏิเสธ</span>
+                        <span class="font-normal opacity-75">Reject</span>
+                      </button>
+
+                      <!-- Revision -->
+                      <button type="button" @click="pendingStatus = 'Revision'; isSaved = false;"
+                        :class="pendingStatus === 'Revision' ? 'bg-orange-500 text-white border-orange-500 shadow-md' : 'bg-white text-orange-600 border-orange-300 hover:bg-orange-50'"
+                        class="flex flex-col items-center gap-1 py-2.5 px-2 border-2 rounded-xl text-[10px] font-black transition-all active:scale-95">
+                        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                        <span>ขอแก้ไข</span>
+                        <span class="font-normal opacity-75">Revision</span>
+                      </button>
+
+                      <!-- Approve -->
+                      <button type="button"
+                        @click="pendingStatus = 'Approved'; isSaved = false; rejectedDueToDepartment = false;"
+                        :class="pendingStatus === 'Approved' ? 'bg-green-600 text-white border-green-600 shadow-md' : 'bg-white text-green-600 border-green-300 hover:bg-green-50'"
+                        class="flex flex-col items-center gap-1 py-2.5 px-2 border-2 rounded-xl text-[10px] font-black transition-all active:scale-95">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        <span>อนุมัติ</span>
+                        <span class="font-normal opacity-75">Approve</span>
+                      </button>
+                    </div>
+
+                    <!-- Dept error checkbox -->
+                    <div x-show="pendingStatus === 'Rejected'"
+                      class="flex items-start gap-2 pt-1 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                      <input type="checkbox" x-model="rejectedDueToDepartment" :id="'admin-dept-err-' + proposal.row"
+                        class="mt-0.5 rounded border-red-300 text-red-600 focus:ring-red-500 w-4 h-4 cursor-pointer shrink-0" />
+                      <label :for="'admin-dept-err-' + proposal.row"
+                        class="text-[10px] font-bold text-red-700 cursor-pointer leading-tight">
+                        ปฏิเสธเนื่องจากระบุแผนกงานผิดพลาดเท่านั้น<br>
+                        <span class="font-normal text-red-500">(เปิดให้ผู้เสนอสามารถแก้ไขแผนกและยื่นใหม่ได้)</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Save Button Row -->
+                  <div class="pt-3 border-t border-neutral-100 space-y-2">
+                    <!-- Success Banner -->
+                    <div x-show="isSaved"
+                      class="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-xl text-[10px] font-bold">
+                      <i data-lucide="check-circle-2" class="w-3.5 h-3.5 shrink-0"></i>
+                      <span>บันทึกสถานะลง Google Sheets สำเร็จ!</span>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-3">
+                      <p class="text-[10px] text-neutral-400 font-semibold leading-tight">
+                        เลือกสถานะด้านบน → กรอกชื่อผู้ประเมิน → กด <strong>บันทึก</strong>
+                      </p>
+
+                      <button type="button" @click="
+                          if (!approver.trim()) {
+                            alert('กรุณากรอกชื่อผู้ประเมิน / ผู้อนุมัติก่อนบันทึกครับ');
+                            return;
                           }
-                        })();
-                      " :disabled="isSaving"
-                      :class="isSaving ? 'bg-neutral-300 cursor-not-allowed' : (pendingStatus === 'Approved' ? 'bg-green-600 hover:bg-green-500' : (pendingStatus === 'Rejected' ? 'bg-red-600 hover:bg-red-500' : 'bg-orange-500 hover:bg-orange-400')) + ' shadow-md active:scale-95'"
-                      class="flex items-center gap-2 px-5 py-2.5 text-white font-black text-xs rounded-xl transition-all shrink-0">
-                      <template x-if="isSaving">
-                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 animate-spin"></i>
-                      </template>
-                      <template x-if="!isSaving">
-                        <i data-lucide="save" class="w-3.5 h-3.5"></i>
-                      </template>
-                      <span x-text="isSaving ? 'กำลังบันทึก...' : 'บันทึก (Save)'"></span>
-                    </button>
+                          isSaving = true;
+                          isSaved = false;
+                          (async () => {
+                            try {
+                              await handleUpdateStatus(proposal.row, pendingStatus, feedback, approver.trim(), pendingStatus === 'Rejected' ? rejectedDueToDepartment : false);
+                              await new Promise(r => setTimeout(r, 1200));
+                              await fetchLiveProposals();
+                              isSaved = true;
+                            } catch (e) {
+                              console.error('Save failed', e);
+                              alert('บันทึกไม่สำเร็จ กรุณาลองใหม่');
+                            } finally {
+                              isSaving = false;
+                            }
+                          })();
+                        " :disabled="isSaving"
+                        :class="isSaving ? 'bg-neutral-300 cursor-not-allowed' : (pendingStatus === 'Approved' ? 'bg-green-600 hover:bg-green-500' : (pendingStatus === 'Rejected' ? 'bg-red-600 hover:bg-red-500' : 'bg-orange-500 hover:bg-orange-400')) + ' shadow-md active:scale-95'"
+                        class="flex items-center gap-2 px-5 py-2.5 text-white font-black text-xs rounded-xl transition-all shrink-0">
+                        <template x-if="isSaving">
+                          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 animate-spin"></i>
+                        </template>
+                        <template x-if="!isSaving">
+                          <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                        </template>
+                        <span x-text="isSaving ? 'กำลังบันทึก...' : 'บันทึก (Save)'"></span>
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-              </div>
+                </div>
 
             </template>
           </div>
@@ -1996,8 +2074,6 @@
           const classes = ICON_STYLES[iconName] || 'w-12 h-12 text-red-600';
           const container = this.$refs.slideIcon;
           if (!container) return;
-          // Clear any previously-rendered icon (including ones lucide already converted to <svg>)
-          // before inserting the next one, so icons never pile up across slide changes.
           container.innerHTML = `<i data-lucide="${iconName}" class="${classes}"></i>`;
           this.$nextTick(() => lucide.createIcons());
         },
@@ -2029,28 +2105,20 @@
           this.aiEvaluation = null;
           this.$nextTick(() => lucide.createIcons());
 
-          // Simulate network/AI response time
           await new Promise(resolve => setTimeout(resolve, 1500));
 
           const textToAnalyze = (this.kaizenTitle + " " + this.problemBefore + " " + this.solutionAfter + " " + this.expectedBenefit).toLowerCase();
-          
-          // Keywords for High-Tech (Kaizen Level 3)
+
           const techKeywords = ['ai', 'iot', 'sensor', 'automation', 'ar', 'projection', 'glasses', 'chatbot', 'cloud', 'digital', 'dashboard', 'real-time', 'online', 'app', 'ระบบอัตโนมัติ', 'เซนเซอร์', 'แชทบอท', 'คลาวด์', 'โดรน', 'drone', 'mapping', '3d', 'รหัสสี', 'color code', 'smart', 'ทำนาย', 'predictive', 'เซ็นเซอร์', 'แอป', 'แอพ', 'ระบบ', 'system', 'vr', 'ocr', 'bot', 'บอท', 'หุ่นยนต์', 'แดชบอร์ด', 'เรียลไทม์', 'โปรแกรม', 'ซอฟต์แวร์', 'ดิจิทัล', 'สแกน', 'pick-to-light', 'ออนไลน์'];
-          // Keywords for Process Improvement (Kaizen Level 2)
           const processKeywords = ['excel', 'google form', 'form', 'database', 'sheet', 'link', 'drive', 'โฟลเดอร์', 'แชร์', 'แชต', 'line', 'ไฟล์', 'จัดเก็บ', 'คู่มือ', 'แบบฟอร์ม', 'checklist', 'เช็คลิสต์', 'ซอง', 'ถาด', 'กล่องแยก'];
-          // Keywords for Organizing / 5S (Kaizen Level 1)
           const basicKeywords = ['บอร์ด', 'shadow board', 'จัดระเบียบ', 'ค้นหา', 'ทำความสะอาด', 'เครื่องมือ', 'ป้าย', 'สติกเกอร์', 'ติดป้าย', 'ตู้', 'ลิ้นชัก', 'ชั้นวาง', 'จัด', 'แยก', 'สี', 'แฟ้ม', 'กระดาษ', 'เดิน', 'ย้าย', 'ตาราง', 'จด', 'บันทึก', 'กล่อง', 'ติด', 'เขียน', 'ความสะอาด'];
-          // Keywords for Routine Work / Responsibilities / Duties
           const routineKeywords = ['กำชับ', 'ตักเตือน', 'เตือน', 'ระมัดระวัง', 'รอบคอบ', 'ตรวจสอบให้ละเอียด', 'ตรวจให้ละเอียด', 'เช็คให้ดี', 'เช็กให้ดี', 'ทำตามกฎ', 'ตามระเบียบ', 'หน้าที่', 'ทำตามคู่มือ', 'ต้องทำ', 'ควรทำ', 'ทำให้เสร็จ', 'รับผิดชอบ', 'งานประจำ', 'ระวัง', 'ตรวจสอบ', 'ตรวจเช็ค', 'ตรวจเช็ก', 'เช็ค', 'เช็ก', 'ทำตาม'];
 
-          // Helper function to avoid substring match issues (like "ar" in "board", or "ai" in "detail"/"maintenance")
           const matchKeyword = (text, keyword) => {
             if (/^[a-z0-9\-]+$/.test(keyword)) {
-              // Word boundary for English keywords
               const regex = new RegExp('\\b' + keyword + '\\b', 'i');
               return regex.test(text);
             } else {
-              // Standard substring inclusion for Thai keywords (since Thai has no word boundaries)
               return text.includes(keyword);
             }
           };
@@ -2065,7 +2133,6 @@
           let feedback = '';
           let recommendation = '';
 
-          // Calculate adjusted process count to treat 'คู่มือ' (manual) as routine/non-process if routine keywords are also present
           let isRoutine = false;
           if (routineCount > 0 && techCount === 0) {
             const adjustedProcessCount = processCount - (textToAnalyze.includes('คู่มือ') ? 1 : 0);
@@ -2074,35 +2141,30 @@
             }
           }
 
-          // 1. Routine Work / Job Responsibility check: Checked first if there is no high tech used, and it's mostly routine words
           if (isRoutine) {
-            score = Math.floor(Math.random() * (29 - 10 + 1)) + 10; 
+            score = Math.floor(Math.random() * (29 - 10 + 1)) + 10;
             type = 'งานประจำ/หน้าที่รับผิดชอบ (Standard Work)';
             feedback = 'ข้อเสนอนี้มีแนวโน้มเป็น "สิ่งที่แผนกหรือพนักงานต้องปฏิบัติอยู่แล้วเป็นปกติ" เช่น การใช้ความระมัดระวังขึ้น การกำชับตักเตือน หรือทำตามกฎระเบียบ ซึ่งยังไม่ถือเป็นการปรับปรุงกระบวนการ (Kaizen) ที่สร้างวิธีทำงานใหม่ครับ';
             recommendation = 'ไคเซ็นไม่ใช่การแก้ปัญหาด้วยคำสั่งว่า "ต้องระวังขึ้น" ลองเปลี่ยนมุมมองเป็นการสร้าง "เครื่องมือป้องกันความผิดพลาด (Poka-yoke)" ที่ทำให้คนทำงานพลาดไม่ได้เลยแม้จะเผลอ หรือสร้างจิ๊ก/ฟอร์มที่บังคับให้งานถูกต้อง 100% ดูครับ!';
           }
-          // 2. High-Tech (Kaizen Level 3)
           else if (techCount > 0) {
             score = Math.floor(Math.random() * (99 - 90 + 1)) + 90;
             type = 'ระดับ 3: นวัตกรรมเทคโนโลยี (Kaizen Level 3)';
             feedback = 'ไอเดียยอดเยี่ยมมาก! การนำเทคโนโลยีและระบบอัตโนมัติมาแก้ปัญหาสามารถช่วยยกระดับความแม่นยำ ลดความผิดพลาด และลดการสูญเสียของงานได้อย่างมีนัยสำคัญ ถือเป็นนวัตกรรมที่คุ้มค่าแก่การประยุกต์ใช้ในองค์กร';
             recommendation = 'ควรระบุแผนการทดสอบระบบตัวจำลอง (Pilot Test) รวมถึงกำหนดวิธีการวัดผลเวลา/ความถูกต้องที่ชัดเจนก่อนปล่อยใช้งานจริงเต็มรูปแบบ';
           }
-          // 3. Process Improvement (Kaizen Level 2)
           else if (processCount > 0) {
             score = Math.floor(Math.random() * (89 - 75 + 1)) + 75;
             type = 'ระดับ 2: ปรับปรุงกระบวนการทำงาน (Kaizen Level 2)';
             feedback = 'เป็นไอเดียที่ดีมาก! การปรับปรุงขั้นตอน ประสานงานผ่านแบบฟอร์มออนไลน์ หรือเครื่องมือแชร์ช่วยแก้ไขการรอคอย (Waiting) และงานแก้ไขได้อย่างดี ช่วยประหยัดเวลาและลดขั้นตอนกระดาษ';
             recommendation = 'แนะนำให้พิจารณาเพิ่มเทคโนโลยีสแกนอัตโนมัติ (เช่น QR Code, Barcode) หรือลิงก์การแจ้งเตือนอัตโนมัติผ่าน LINE Notify เพื่อยกระดับความเร็วขึ้นอีกขั้น';
           }
-          // 4. Basic / 5S / Organizing (Kaizen Level 1)
           else if (basicCount > 0 || textToAnalyze.length > 80) {
             score = Math.floor(Math.random() * (74 - 50 + 1)) + 50;
             type = 'ระดับ 1: จัดระเบียบหน้างาน & 5ส (Kaizen Level 1)';
             feedback = 'เป็นการปรับปรุงพื้นฐานที่ดีตามหลัก 5ส ช่วยเพิ่มความปลอดภัยและลดเวลาเคลื่อนไหวที่สูญเปล่า (Motion) ในการหาเครื่องมือ/พัสดุ ป้องกันอุปกรณ์สูญหาย';
             recommendation = 'หากต้องการคะแนนเพิ่ม แนะนำให้ขยายไอเดียสู่ระบบดิจิทัล เช่น แทนที่บอร์ดเงาธรรมดา ลองจำแนกรหัสผ่านคลังสินค้าออนไลน์เพื่อให้เห็นสต็อกแบบทันที';
           }
-          // 5. Short Draft / Minimal Idea
           else {
             score = Math.floor(Math.random() * (49 - 30 + 1)) + 30;
             type = 'ไอเดียเริ่มต้น (Draft Idea)';
@@ -2119,6 +2181,62 @@
 
           this.isEvaluating = false;
           this.$nextTick(() => lucide.createIcons());
+        },
+
+        analyzeProposalForAdmin(proposal) {
+          const textToAnalyze = ((proposal.title || '') + " " + (proposal.problemBefore || '') + " " + (proposal.solutionAfter || '') + " " + (proposal.expectedBenefit || '')).toLowerCase();
+
+          const techKeywords = ['ai', 'iot', 'sensor', 'automation', 'ar', 'projection', 'glasses', 'chatbot', 'cloud', 'digital', 'dashboard', 'real-time', 'online', 'app', 'ระบบอัตโนมัติ', 'เซนเซอร์', 'แชทบอท', 'คลาวด์', 'โดรน', 'drone', 'mapping', '3d', 'รหัสสี', 'color code', 'smart', 'ทำนาย', 'predictive', 'เซ็นเซอร์', 'แอป', 'แอพ', 'ระบบ', 'system', 'vr', 'ocr', 'bot', 'บอท', 'หุ่นยนต์', 'แดชบอร์ด', 'เรียลไทม์', 'โปรแกรม', 'ซอฟต์แวร์', 'ดิจิทัล', 'สแกน', 'pick-to-light', 'ออนไลน์'];
+          const processKeywords = ['excel', 'google form', 'form', 'database', 'sheet', 'link', 'drive', 'โฟลเดอร์', 'แชร์', 'แชต', 'line', 'ไฟล์', 'จัดเก็บ', 'คู่มือ', 'แบบฟอร์ม', 'checklist', 'เช็คลิสต์', 'ซอง', 'ถาด', 'กล่องแยก'];
+          const basicKeywords = ['บอร์ด', 'shadow board', 'จัดระเบียบ', 'ค้นหา', 'ทำความสะอาด', 'เครื่องมือ', 'ป้าย', 'สติกเกอร์', 'ติดป้าย', 'ตู้', 'ลิ้นชัก', 'ชั้นวาง', 'จัด', 'แยก', 'สี', 'แฟ้ม', 'กระดาษ', 'เดิน', 'ย้าย', 'ตาราง', 'จด', 'บันทึก', 'กล่อง', 'ติด', 'เขียน', 'ความสะอาด'];
+          const routineKeywords = ['กำชับ', 'ตักเตือน', 'เตือน', 'ระมัดระวัง', 'รอบคอบ', 'ตรวจสอบให้ละเอียด', 'ตรวจให้ละเอียด', 'เช็คให้ดี', 'เช็กให้ดี', 'ทำตามกฎ', 'ตามระเบียบ', 'หน้าที่', 'ทำตามคู่มือ', 'ต้องทำ', 'ควรทำ', 'ทำให้เสร็จ', 'รับผิดชอบ', 'งานประจำ', 'ระวัง', 'ตรวจสอบ', 'ตรวจเช็ค', 'ตรวจเช็ก', 'เช็ค', 'เช็ก', 'ทำตาม'];
+
+          const matchKeyword = (text, keyword) => {
+            if (/^[a-z0-9\-]+$/.test(keyword)) {
+              const regex = new RegExp('\\b' + keyword + '\\b', 'i');
+              return regex.test(text);
+            } else {
+              return text.includes(keyword);
+            }
+          };
+
+          let techCount = techKeywords.filter(kw => matchKeyword(textToAnalyze, kw)).length;
+          let processCount = processKeywords.filter(kw => matchKeyword(textToAnalyze, kw)).length;
+          let basicCount = basicKeywords.filter(kw => matchKeyword(textToAnalyze, kw)).length;
+          let routineCount = routineKeywords.filter(kw => matchKeyword(textToAnalyze, kw)).length;
+
+          let isRoutine = false;
+          if (routineCount > 0 && techCount === 0) {
+            const adjustedProcessCount = processCount - (textToAnalyze.includes('คู่มือ') ? 1 : 0);
+            if (adjustedProcessCount === 0) {
+              isRoutine = true;
+            }
+          }
+
+          let recommendedStatus = 'Pending';
+          let feedback = '';
+
+          if (isRoutine) {
+            recommendedStatus = 'Rejected';
+            feedback = 'จากการวิเคราะห์พบว่าข้อเสนอนี้เป็นเรื่องของงานประจำหรือหน้าที่ความรับผิดชอบปกติของพนักงาน (Standard Work) ซึ่งยังขาดการปรับปรุงกระบวนการหรือเครื่องมือป้องกันข้อผิดพลาดเชิงโครงสร้าง แนะนำให้ผู้เสนอพิจารณาปรับเปลี่ยนวิธีการเป็นการคิดค้นเครื่องมือ/วิธีการที่ช่วยลดขั้นตอนหรือลดโอกาสในการทำงานผิดพลาดได้โดยตรงครับ';
+          } else if (techCount > 0) {
+            recommendedStatus = 'Approved';
+            feedback = 'ยอดเยี่ยมมาก! ข้อเสนอมีการริเริ่มประยุกต์ใช้นวัตกรรมเทคโนโลยีและการจัดการข้อมูลแบบเรียลไทม์ (Kaizen Level 3) ช่วยเพิ่มประสิทธิภาพและความแม่นยำสูง แนะนำให้อนุมัติเพื่อจัดทำโครงการต้นแบบ (Pilot Project) และประเมินผลการใช้งานเชิงตัวเลขต่อไปครับ';
+          } else if (processCount > 0) {
+            recommendedStatus = 'Approved';
+            feedback = 'เป็นไอเดียการปรับปรุงขั้นตอนการทำงานที่ดีมาก (Kaizen Level 2) ช่วยแก้ปัญหาความสูญเสียด้านการรอคอยและลดการใช้เอกสารกระดาษลงได้ชัดเจน แนะนำอนุมัติเพื่อทดลองใช้แบบฟอร์ม/ระบบจัดการดังกล่าวและวัดผลระยะเวลาที่ประหยัดได้ครับ';
+          } else if (basicCount > 0 || textToAnalyze.length > 80) {
+            recommendedStatus = 'Approved';
+            feedback = 'เป็นไอเดียการปรับปรุงการจัดระเบียบหน้างานและ 5ส ที่ดี (Kaizen Level 1) ช่วยเพิ่มความปลอดภัยและลดเวลาสูญเปล่าในการค้นหาเครื่องมือ/อุปกรณ์ แนะนำอนุมัติให้ดำเนินการและติดตั้งป้าย/บอร์ดเงาให้เรียบร้อยตามแผน';
+          } else {
+            recommendedStatus = 'Revision';
+            feedback = 'รายละเอียดในใบข้อเสนอแนะยังค่อนข้างสั้นและระบุวิธีการปรับปรุงไม่ชัดเจนเพียงพอ แนะนำให้ผู้ยื่นข้อมูลเพิ่มเติมในส่วนของ \'วิธีการปรับปรุงใหม่ (After)\' และระบุผลดีที่คาดว่าจะได้รับให้เห็นภาพชัดเจนขึ้นแล้วส่งเข้ามาใหม่อีกครั้งครับ';
+          }
+
+          return {
+            status: recommendedStatus,
+            feedback: feedback
+          };
         },
 
         handleCopyText() {
@@ -2232,7 +2350,6 @@
         },
 
         async handleUpdateStatus(rowIndex, newStatus, feedbackText, approverName, rejectedDueToDept = false) {
-          // 1. Update locally
           this.backendProposals = this.backendProposals.map(item => {
             if (item.row === rowIndex) {
               return {
@@ -2247,7 +2364,6 @@
           });
           localStorage.setItem('local_proposals', JSON.stringify(this.backendProposals));
 
-          // 2. Try to update sheet via fetch if URL is configured
           if (this.GOOGLE_SHEET_WEB_APP_URL && this.GOOGLE_SHEET_WEB_APP_URL.startsWith('http')) {
             try {
               await fetch(this.GOOGLE_SHEET_WEB_APP_URL, {
@@ -2272,12 +2388,10 @@
         },
 
         async handleUpdateProposal(rowIndex, updatedData) {
-          // Find current status to check if it's Approved
           const currentProposal = this.backendProposals.find(item => item.row === rowIndex);
           const currentStatus = currentProposal ? currentProposal.status : 'Pending';
           const targetStatus = currentStatus === 'Approved' ? 'Approved' : 'Pending';
 
-          // 1. Update locally
           this.backendProposals = this.backendProposals.map(item => {
             if (item.row === rowIndex) {
               return {
@@ -2290,7 +2404,7 @@
                 solutionAfter: updatedData.solutionAfter,
                 expectedBenefit: updatedData.expectedBenefit,
                 status: targetStatus,
-                rejectedDueToDepartment: false, // reset the flag upon correction
+                rejectedDueToDepartment: false,
                 editorName: updatedData.editorName
               };
             }
@@ -2298,7 +2412,6 @@
           });
           localStorage.setItem('local_proposals', JSON.stringify(this.backendProposals));
 
-          // 2. Post update to Google Sheets
           if (this.GOOGLE_SHEET_WEB_APP_URL && this.GOOGLE_SHEET_WEB_APP_URL.startsWith('http')) {
             try {
               await fetch(this.GOOGLE_SHEET_WEB_APP_URL, {
