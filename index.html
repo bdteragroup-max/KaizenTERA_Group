@@ -2032,49 +2032,82 @@
           // Simulate network/AI response time
           await new Promise(resolve => setTimeout(resolve, 1500));
 
-          const problem = this.problemBefore.toLowerCase();
-          const solution = this.solutionAfter.toLowerCase();
-          const benefit = this.expectedBenefit ? this.expectedBenefit.toLowerCase() : '';
-
-          // Calculate basic Innovation Score
-          let score = 55; // Base score
+          const textToAnalyze = (this.kaizenTitle + " " + this.problemBefore + " " + this.solutionAfter + " " + this.expectedBenefit).toLowerCase();
           
           // Keywords for High-Tech (Kaizen Level 3)
-          const techKeywords = ['ai', 'iot', 'sensor', 'automation', 'ar', 'projection', 'glasses', 'chatbot', 'cloud', 'digital', 'dashboard', 'real-time', 'online', 'app', 'ระบบอัตโนมัติ', 'เซนเซอร์', 'แชทบอท', 'คลาวด์', 'โดรน', 'drone', 'mapping', '3d', 'รหัสสี', 'color code', 'smart', 'ทำนาย', 'predictive'];
+          const techKeywords = ['ai', 'iot', 'sensor', 'automation', 'ar', 'projection', 'glasses', 'chatbot', 'cloud', 'digital', 'dashboard', 'real-time', 'online', 'app', 'ระบบอัตโนมัติ', 'เซนเซอร์', 'แชทบอท', 'คลาวด์', 'โดรน', 'drone', 'mapping', '3d', 'รหัสสี', 'color code', 'smart', 'ทำนาย', 'predictive', 'เซ็นเซอร์', 'แอป', 'แอพ', 'ระบบ', 'system', 'vr', 'ocr', 'bot', 'บอท', 'หุ่นยนต์', 'แดชบอร์ด', 'เรียลไทม์', 'โปรแกรม', 'ซอฟต์แวร์', 'ดิจิทัล', 'สแกน', 'pick-to-light', 'ออนไลน์'];
           // Keywords for Process Improvement (Kaizen Level 2)
           const processKeywords = ['excel', 'google form', 'form', 'database', 'sheet', 'link', 'drive', 'โฟลเดอร์', 'แชร์', 'แชต', 'line', 'ไฟล์', 'จัดเก็บ', 'คู่มือ', 'แบบฟอร์ม', 'checklist', 'เช็คลิสต์', 'ซอง', 'ถาด', 'กล่องแยก'];
           // Keywords for Organizing / 5S (Kaizen Level 1)
-          const basicKeywords = ['บอร์ด', 'shadow board', 'จัดระเบียบ', 'ค้นหา', 'ทำความสะอาด', 'เครื่องมือ', 'ป้าย', 'สติกเกอร์', 'ติดป้าย', 'ตู้', 'ลิ้นชัก', 'ชั้นวาง'];
+          const basicKeywords = ['บอร์ด', 'shadow board', 'จัดระเบียบ', 'ค้นหา', 'ทำความสะอาด', 'เครื่องมือ', 'ป้าย', 'สติกเกอร์', 'ติดป้าย', 'ตู้', 'ลิ้นชัก', 'ชั้นวาง', 'จัด', 'แยก', 'สี', 'แฟ้ม', 'กระดาษ', 'เดิน', 'ย้าย', 'ตาราง', 'จด', 'บันทึก', 'กล่อง', 'ติด', 'เขียน', 'ความสะอาด'];
+          // Keywords for Routine Work / Responsibilities / Duties
+          const routineKeywords = ['กำชับ', 'ตักเตือน', 'เตือน', 'ระมัดระวัง', 'รอบคอบ', 'ตรวจสอบให้ละเอียด', 'ตรวจให้ละเอียด', 'เช็คให้ดี', 'เช็กให้ดี', 'ทำตามกฎ', 'ตามระเบียบ', 'หน้าที่', 'ทำตามคู่มือ', 'ต้องทำ', 'ควรทำ', 'ทำให้เสร็จ', 'รับผิดชอบ', 'งานประจำ', 'ระวัง', 'ตรวจสอบ', 'ตรวจเช็ค', 'ตรวจเช็ก', 'เช็ค', 'เช็ก', 'ทำตาม'];
 
-          let techCount = techKeywords.filter(kw => problem.includes(kw) || solution.includes(kw) || benefit.includes(kw)).length;
-          let processCount = processKeywords.filter(kw => problem.includes(kw) || solution.includes(kw) || benefit.includes(kw)).length;
-          let basicCount = basicKeywords.filter(kw => problem.includes(kw) || solution.includes(kw) || benefit.includes(kw)).length;
+          // Helper function to avoid substring match issues (like "ar" in "board", or "ai" in "detail"/"maintenance")
+          const matchKeyword = (text, keyword) => {
+            if (/^[a-z0-9\-]+$/.test(keyword)) {
+              // Word boundary for English keywords
+              const regex = new RegExp('\\b' + keyword + '\\b', 'i');
+              return regex.test(text);
+            } else {
+              // Standard substring inclusion for Thai keywords (since Thai has no word boundaries)
+              return text.includes(keyword);
+            }
+          };
 
-          score += techCount * 8;
-          score += processCount * 4;
-          score += basicCount * 2;
+          let techCount = techKeywords.filter(kw => matchKeyword(textToAnalyze, kw)).length;
+          let processCount = processKeywords.filter(kw => matchKeyword(textToAnalyze, kw)).length;
+          let basicCount = basicKeywords.filter(kw => matchKeyword(textToAnalyze, kw)).length;
+          let routineCount = routineKeywords.filter(kw => matchKeyword(textToAnalyze, kw)).length;
 
-          // Cap score between 60% and 98%
-          if (score < 60) score = 60 + Math.floor(Math.random() * 8);
-          if (score > 98) score = 95 + Math.floor(Math.random() * 4);
-
-          // Determine Level & Type
+          let score = 0;
           let type = '';
           let feedback = '';
           let recommendation = '';
 
-          if (techCount > 0 || score >= 80) {
+          // Calculate adjusted process count to treat 'คู่มือ' (manual) as routine/non-process if routine keywords are also present
+          let isRoutine = false;
+          if (routineCount > 0 && techCount === 0) {
+            const adjustedProcessCount = processCount - (textToAnalyze.includes('คู่มือ') ? 1 : 0);
+            if (adjustedProcessCount === 0) {
+              isRoutine = true;
+            }
+          }
+
+          // 1. Routine Work / Job Responsibility check: Checked first if there is no high tech used, and it's mostly routine words
+          if (isRoutine) {
+            score = Math.floor(Math.random() * (29 - 10 + 1)) + 10; 
+            type = 'งานประจำ/หน้าที่รับผิดชอบ (Standard Work)';
+            feedback = 'ข้อเสนอนี้มีแนวโน้มเป็น "สิ่งที่แผนกหรือพนักงานต้องปฏิบัติอยู่แล้วเป็นปกติ" เช่น การใช้ความระมัดระวังขึ้น การกำชับตักเตือน หรือทำตามกฎระเบียบ ซึ่งยังไม่ถือเป็นการปรับปรุงกระบวนการ (Kaizen) ที่สร้างวิธีทำงานใหม่ครับ';
+            recommendation = 'ไคเซ็นไม่ใช่การแก้ปัญหาด้วยคำสั่งว่า "ต้องระวังขึ้น" ลองเปลี่ยนมุมมองเป็นการสร้าง "เครื่องมือป้องกันความผิดพลาด (Poka-yoke)" ที่ทำให้คนทำงานพลาดไม่ได้เลยแม้จะเผลอ หรือสร้างจิ๊ก/ฟอร์มที่บังคับให้งานถูกต้อง 100% ดูครับ!';
+          }
+          // 2. High-Tech (Kaizen Level 3)
+          else if (techCount > 0) {
+            score = Math.floor(Math.random() * (99 - 90 + 1)) + 90;
             type = 'ระดับ 3: นวัตกรรมเทคโนโลยี (Kaizen Level 3)';
             feedback = 'ไอเดียยอดเยี่ยมมาก! การนำเทคโนโลยีและระบบอัตโนมัติมาแก้ปัญหาสามารถช่วยยกระดับความแม่นยำ ลดความผิดพลาด และลดการสูญเสียของงานได้อย่างมีนัยสำคัญ ถือเป็นนวัตกรรมที่คุ้มค่าแก่การประยุกต์ใช้ในองค์กร';
             recommendation = 'ควรระบุแผนการทดสอบระบบตัวจำลอง (Pilot Test) รวมถึงกำหนดวิธีการวัดผลเวลา/ความถูกต้องที่ชัดเจนก่อนปล่อยใช้งานจริงเต็มรูปแบบ';
-          } else if (processCount > 0 || score >= 70) {
+          }
+          // 3. Process Improvement (Kaizen Level 2)
+          else if (processCount > 0) {
+            score = Math.floor(Math.random() * (89 - 75 + 1)) + 75;
             type = 'ระดับ 2: ปรับปรุงกระบวนการทำงาน (Kaizen Level 2)';
             feedback = 'เป็นไอเดียที่ดีมาก! การปรับปรุงขั้นตอน ประสานงานผ่านแบบฟอร์มออนไลน์ หรือเครื่องมือแชร์ช่วยแก้ไขการรอคอย (Waiting) และงานแก้ไขได้อย่างดี ช่วยประหยัดเวลาและลดขั้นตอนกระดาษ';
             recommendation = 'แนะนำให้พิจารณาเพิ่มเทคโนโลยีสแกนอัตโนมัติ (เช่น QR Code, Barcode) หรือลิงก์การแจ้งเตือนอัตโนมัติผ่าน LINE Notify เพื่อยกระดับความเร็วขึ้นอีกขั้น';
-          } else {
+          }
+          // 4. Basic / 5S / Organizing (Kaizen Level 1)
+          else if (basicCount > 0 || textToAnalyze.length > 80) {
+            score = Math.floor(Math.random() * (74 - 50 + 1)) + 50;
             type = 'ระดับ 1: จัดระเบียบหน้างาน & 5ส (Kaizen Level 1)';
             feedback = 'เป็นการปรับปรุงพื้นฐานที่ดีตามหลัก 5ส ช่วยเพิ่มความปลอดภัยและลดเวลาเคลื่อนไหวที่สูญเปล่า (Motion) ในการหาเครื่องมือ/พัสดุ ป้องกันอุปกรณ์สูญหาย';
             recommendation = 'หากต้องการคะแนนเพิ่ม แนะนำให้ขยายไอเดียสู่ระบบดิจิทัล เช่น แทนที่บอร์ดเงาธรรมดา ลองจำแนกรหัสผ่านคลังสินค้าออนไลน์เพื่อให้เห็นสต็อกแบบทันที';
+          }
+          // 5. Short Draft / Minimal Idea
+          else {
+            score = Math.floor(Math.random() * (49 - 30 + 1)) + 30;
+            type = 'ไอเดียเริ่มต้น (Draft Idea)';
+            feedback = 'ข้อเสนอยังสั้นเกินไป แนะนำให้ระบุรายละเอียด "วิธีการ" ให้ชัดเจนขึ้น เพื่อให้คณะกรรมการประเมินประโยชน์ได้แม่นยำยิ่งขึ้นครับ';
+            recommendation = 'พยายามอธิบายเพิ่มว่า คุณจะใช้อุปกรณ์หรือโปรแกรมอะไรมาช่วย? (How) และผลที่ได้จะประหยัดเวลาหรือลดต้นทุนได้ประมาณเท่าไหร่ในเชิงตัวเลขครับ?';
           }
 
           this.aiEvaluation = {
