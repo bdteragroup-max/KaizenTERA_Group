@@ -963,6 +963,7 @@
             })" :key="proposal.row">
 
               <div x-data="{ 
+                  isExpanded: false,
                   isEditing: false, 
                   isSavingEdit: false,
                   editTitle: proposal.title, 
@@ -982,8 +983,11 @@
                   class="absolute top-0 left-0 right-0 h-1.5"></div>
 
                 <!-- Read Only View -->
-                <div x-show="!isEditing" class="space-y-4">
-                  <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div x-show="!isEditing" class="flex flex-col">
+                  
+                  <!-- Clickable Header Area -->
+                  <div @click="isExpanded = !isExpanded; if(isExpanded) { $nextTick(() => lucide.createIcons()); }" 
+                       class="cursor-pointer group flex flex-col md:flex-row md:items-start justify-between gap-4 pb-4 hover:opacity-80 transition-opacity">
                     <div class="space-y-2 flex-grow">
                       <!-- Metadata -->
                       <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
@@ -995,7 +999,7 @@
                       </div>
 
                       <!-- Title -->
-                      <h3 class="text-lg font-black text-neutral-900 tracking-tight" x-text="proposal.title"></h3>
+                      <h3 class="text-lg font-black text-neutral-900 tracking-tight group-hover:text-red-600 transition-colors" x-text="proposal.title"></h3>
 
                       <!-- Submitter Info -->
                       <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-500 font-bold">
@@ -1056,11 +1060,19 @@
                           </div>
                         </template>
                       </span>
+                      
+                      <!-- Toggle indicator -->
+                      <div class="flex items-center gap-1.5 mt-2 text-neutral-400 group-hover:text-red-600 transition-colors self-end md:self-auto">
+                        <span class="text-[10px] font-bold" x-text="isExpanded ? 'ย่อเนื้อหา' : 'คลิกเพื่อดูรายละเอียด'"></span>
+                        <i :data-lucide="isExpanded ? 'chevron-up' : 'chevron-down'" class="w-4 h-4"></i>
+                      </div>
                     </div>
                   </div>
 
+                  <!-- Expandable Details Area -->
+                  <div x-show="isExpanded" x-transition.opacity.duration.300ms class="space-y-4">
                   <!-- Summary of changes -->
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 pt-4 border-t border-neutral-100 text-xs">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4 border-t border-neutral-100 text-xs">
                     <div class="bg-neutral-50 p-3 rounded-xl border border-neutral-200">
                       <span class="font-bold text-neutral-500 block mb-1">ก่อนปรับปรุง (Before):</span>
                       <p class="text-neutral-700 font-semibold leading-relaxed" x-text="proposal.problemBefore"></p>
@@ -1102,6 +1114,7 @@
                     <i data-lucide="lock" class="w-3.5 h-3.5"></i>
                     <span>ข้อเสนอนี้ถูกประเมินแล้ว ไม่สามารถแก้ไขได้ (ต้องรอแอดมินเปลี่ยนสถานะเป็น "ต้องแก้ไขเพิ่มเติม"
                       ก่อน)</span>
+                  </div>
                   </div>
                 </div>
 
