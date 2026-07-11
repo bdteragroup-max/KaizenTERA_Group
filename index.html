@@ -791,9 +791,12 @@
                     ปัญหาก่อนปรับปรุง (Before)
                   </span>
                   <p :class="problemBefore ? 'text-neutral-800 font-semibold' : 'text-neutral-300 italic'"
-                    class="text-sm leading-relaxed min-h-[40px] whitespace-pre-wrap" x-text="problemBefore || 'อธิบายปัญหาที่พบ...'"></p>
-                  <p x-show="problemCause" class="text-xs text-neutral-500 italic mt-2 pl-2 border-l-2 border-red-200 whitespace-pre-wrap">
-                    สาเหตุ: <span class="font-semibold text-neutral-700 whitespace-pre-wrap" x-text="problemCause"></span>
+                    class="text-sm leading-relaxed min-h-[40px] whitespace-pre-wrap"
+                    x-text="problemBefore || 'อธิบายปัญหาที่พบ...'"></p>
+                  <p x-show="problemCause"
+                    class="text-xs text-neutral-500 italic mt-2 pl-2 border-l-2 border-red-200 whitespace-pre-wrap">
+                    สาเหตุ: <span class="font-semibold text-neutral-700 whitespace-pre-wrap"
+                      x-text="problemCause"></span>
                   </p>
                 </div>
 
@@ -804,7 +807,8 @@
                     วิธีการปรับปรุงใหม่ (After)
                   </span>
                   <p :class="solutionAfter ? 'text-neutral-800 font-semibold' : 'text-neutral-300 italic'"
-                    class="text-sm leading-relaxed min-h-[40px] whitespace-pre-wrap" x-text="solutionAfter || 'วิธีการปรับปรุงที่เสนอ...'">
+                    class="text-sm leading-relaxed min-h-[40px] whitespace-pre-wrap"
+                    x-text="solutionAfter || 'วิธีการปรับปรุงที่เสนอ...'">
                   </p>
                 </div>
 
@@ -917,7 +921,8 @@
         </div>
 
         <!-- Search Input Card -->
-        <div class="bg-white border border-neutral-200 rounded-3xl p-5 shadow-md max-w-4xl mx-auto flex flex-col md:flex-row gap-4">
+        <div
+          class="bg-white border border-neutral-200 rounded-3xl p-5 shadow-md max-w-4xl mx-auto flex flex-col md:flex-row gap-4">
           <div class="relative flex-grow">
             <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-neutral-400">
               <i data-lucide="search" class="w-5 h-5"></i>
@@ -995,6 +1000,7 @@
                   editProblemCause: proposal.problemCause || '', 
                   editSolutionAfter: proposal.solutionAfter, 
                   editExpectedBenefit: proposal.expectedBenefit || '', 
+                  editCorrectionComments: proposal.correctionComments || '',
                   confirmSamePerson: false 
                 }"
                 :class="proposal.status === 'Approved' ? 'border-green-200' : (proposal.status === 'Rejected' ? 'border-red-200' : (proposal.status === 'Revision' ? 'border-orange-200' : 'border-neutral-200'))"
@@ -1006,10 +1012,10 @@
 
                 <!-- Read Only View -->
                 <div x-show="!isEditing" class="flex flex-col">
-                  
+
                   <!-- Clickable Header Area -->
-                  <div @click="isExpanded = !isExpanded; if(isExpanded) { $nextTick(() => lucide.createIcons()); }" 
-                       class="cursor-pointer group flex flex-col md:flex-row md:items-start justify-between gap-4 pb-4 hover:opacity-80 transition-opacity">
+                  <div @click="isExpanded = !isExpanded; if(isExpanded) { $nextTick(() => lucide.createIcons()); }"
+                    class="cursor-pointer group flex flex-col md:flex-row md:items-start justify-between gap-4 pb-4 hover:opacity-80 transition-opacity">
                     <div class="space-y-2 flex-grow">
                       <!-- Metadata -->
                       <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
@@ -1021,7 +1027,9 @@
                       </div>
 
                       <!-- Title -->
-                      <h3 class="text-lg font-black text-neutral-900 tracking-tight group-hover:text-red-600 transition-colors" x-text="proposal.title"></h3>
+                      <h3
+                        class="text-lg font-black text-neutral-900 tracking-tight group-hover:text-red-600 transition-colors"
+                        x-text="proposal.title"></h3>
 
                       <!-- Submitter Info -->
                       <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-500 font-bold">
@@ -1082,10 +1090,12 @@
                           </div>
                         </template>
                       </span>
-                      
+
                       <!-- Toggle indicator -->
-                      <div class="flex items-center gap-1.5 mt-2 text-neutral-400 group-hover:text-red-600 transition-colors self-end md:self-auto">
-                        <span class="text-[10px] font-bold" x-text="isExpanded ? 'ย่อเนื้อหา' : 'คลิกเพื่อดูรายละเอียด'"></span>
+                      <div
+                        class="flex items-center gap-1.5 mt-2 text-neutral-400 group-hover:text-red-600 transition-colors self-end md:self-auto">
+                        <span class="text-[10px] font-bold"
+                          x-text="isExpanded ? 'ย่อเนื้อหา' : 'คลิกเพื่อดูรายละเอียด'"></span>
                         <i :data-lucide="isExpanded ? 'chevron-up' : 'chevron-down'" class="w-4 h-4"></i>
                       </div>
                     </div>
@@ -1093,50 +1103,69 @@
 
                   <!-- Expandable Details Area -->
                   <div x-show="isExpanded" x-transition.opacity.duration.300ms class="space-y-4">
-                  <!-- Summary of changes -->
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4 border-t border-neutral-100 text-xs">
-                    <div class="bg-neutral-50 p-3 rounded-xl border border-neutral-200">
-                      <span class="font-bold text-neutral-500 block mb-1">ก่อนปรับปรุง (Before):</span>
-                      <p class="text-neutral-700 font-semibold leading-relaxed whitespace-pre-wrap" x-text="proposal.problemBefore"></p>
+                    <!-- Summary of changes -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4 border-t border-neutral-100 text-xs">
+                      <div class="bg-neutral-50 p-3 rounded-xl border border-neutral-200">
+                        <span class="font-bold text-neutral-500 block mb-1">ก่อนปรับปรุง (Before):</span>
+                        <p class="text-neutral-700 font-semibold leading-relaxed whitespace-pre-wrap"
+                          x-text="proposal.problemBefore"></p>
+                      </div>
+                      <div class="bg-red-50/10 p-3 rounded-xl border border-red-50">
+                        <span class="font-bold text-red-600 block mb-1">วิธีการปรับปรุงใหม่ (After):</span>
+                        <p class="text-neutral-700 font-semibold leading-relaxed whitespace-pre-wrap"
+                          x-text="proposal.solutionAfter"></p>
+                      </div>
                     </div>
-                    <div class="bg-red-50/10 p-3 rounded-xl border border-red-50">
-                      <span class="font-bold text-red-600 block mb-1">วิธีการปรับปรุงใหม่ (After):</span>
-                      <p class="text-neutral-700 font-semibold leading-relaxed whitespace-pre-wrap" x-text="proposal.solutionAfter"></p>
+
+                    <!-- Feedback / Evaluation details -->
+                    <div x-show="proposal.feedback"
+                      :class="proposal.status === 'Approved' ? 'bg-green-50/30 border-green-100' : (proposal.status === 'Revision' ? 'bg-orange-50/30 border-orange-100' : 'bg-red-50/30 border-red-100')"
+                      class="mt-4 p-4 rounded-2xl border text-xs space-y-2">
+                      <div class="space-y-1">
+                        <span class="block font-bold text-neutral-500 uppercase tracking-wider text-[10px]">
+                          ความคิดเห็นจากคณะกรรมการ:
+                        </span>
+                        <p class="text-neutral-750 font-medium italic pl-3 border-l-2 border-neutral-300">
+                          "<span x-text="proposal.feedback"></span>"
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <!-- Feedback / Evaluation details -->
-                  <div x-show="proposal.feedback"
-                    :class="proposal.status === 'Approved' ? 'bg-green-50/30 border-green-100' : (proposal.status === 'Revision' ? 'bg-orange-50/30 border-orange-100' : 'bg-red-50/30 border-red-100')"
-                    class="mt-4 p-4 rounded-2xl border text-xs space-y-2">
-                    <div class="space-y-1">
-                      <span class="block font-bold text-neutral-500 uppercase tracking-wider text-[10px]">
-                        ความคิดเห็นจากคณะกรรมการ:
-                      </span>
-                      <p class="text-neutral-750 font-medium italic pl-3 border-l-2 border-neutral-300">
-                        "<span x-text="proposal.feedback"></span>"
-                      </p>
+                    <!-- Correction Comments details -->
+                    <div x-show="proposal.correctionComments"
+                      class="mt-4 p-4 rounded-2xl border bg-neutral-50 border-neutral-200 text-xs space-y-2">
+                      <div class="space-y-1">
+                        <span
+                          class="block font-bold text-neutral-500 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                          <i data-lucide="edit-3" class="w-3.5 h-3.5 text-neutral-500"></i> รายละเอียดการแก้ไขล่าสุด
+                          (Correction Notes):
+                        </span>
+                        <p
+                          class="text-neutral-750 font-medium italic pl-3 border-l-2 border-neutral-300 whitespace-pre-wrap">
+                          "<span x-text="proposal.correctionComments"></span>"
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <!-- Edit action button: allowed only while Pending or Revision (locked once Approved/Rejected) -->
-                  <div x-show="proposal.status === 'Pending' || proposal.status === 'Revision'"
-                    class="mt-4 pt-3 border-t border-neutral-100 flex justify-end gap-2">
-                    <button type="button"
-                      @click="isEditing = true; confirmSamePerson = false; editTitle = proposal.title; editCreator = proposal.creator; editDepartment = proposal.department; editProblemBefore = proposal.problemBefore; editProblemCause = proposal.problemCause || ''; editSolutionAfter = proposal.solutionAfter; editExpectedBenefit = proposal.expectedBenefit || ''; $nextTick(() => lucide.createIcons());"
-                      class="flex items-center gap-1.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-sm active:scale-95">
-                      <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                      <span>แก้ไขข้อมูล / Correct Info</span>
-                    </button>
-                  </div>
+                    <!-- Edit action button: allowed only while Pending or Revision (locked once Approved/Rejected) -->
+                    <div x-show="proposal.status === 'Pending' || proposal.status === 'Revision'"
+                      class="mt-4 pt-3 border-t border-neutral-100 flex justify-end gap-2">
+                      <button type="button"
+                        @click="isEditing = true; confirmSamePerson = false; editTitle = proposal.title; editCreator = proposal.creator; editDepartment = proposal.department; editProblemBefore = proposal.problemBefore; editProblemCause = proposal.problemCause || ''; editSolutionAfter = proposal.solutionAfter; editExpectedBenefit = proposal.expectedBenefit || ''; editCorrectionComments = proposal.correctionComments || ''; $nextTick(() => lucide.createIcons());"
+                        class="flex items-center gap-1.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-sm active:scale-95">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                        <span>แก้ไขข้อมูล / Correct Info</span>
+                      </button>
+                    </div>
 
-                  <!-- Locked notice once Approved or Rejected -->
-                  <div x-show="proposal.status === 'Approved' || proposal.status === 'Rejected'"
-                    class="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-end gap-1.5 text-[11px] text-neutral-400 font-semibold">
-                    <i data-lucide="lock" class="w-3.5 h-3.5"></i>
-                    <span>ข้อเสนอนี้ถูกประเมินแล้ว ไม่สามารถแก้ไขได้ (ต้องรอแอดมินเปลี่ยนสถานะเป็น "ต้องแก้ไขเพิ่มเติม"
-                      ก่อน)</span>
-                  </div>
+                    <!-- Locked notice once Approved or Rejected -->
+                    <div x-show="proposal.status === 'Approved' || proposal.status === 'Rejected'"
+                      class="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-end gap-1.5 text-[11px] text-neutral-400 font-semibold">
+                      <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                      <span>ข้อเสนอนี้ถูกประเมินแล้ว ไม่สามารถแก้ไขได้ (ต้องรอแอดมินเปลี่ยนสถานะเป็น
+                        "ต้องแก้ไขเพิ่มเติม"
+                        ก่อน)</span>
+                    </div>
                   </div>
                 </div>
 
@@ -1210,7 +1239,8 @@
                       </label>
                       <textarea rows="6" x-model="editProblemBefore" :disabled="proposal.status === 'Approved'"
                         x-data="{ resize() { $el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px' } }"
-                        x-init="$watch('editProblemBefore', () => $nextTick(() => resize())); $watch('isEditing', v => { if(v) $nextTick(() => resize()) }); $nextTick(() => resize())" @input="resize()"
+                        x-init="$watch('editProblemBefore', () => $nextTick(() => resize())); $watch('isEditing', v => { if(v) $nextTick(() => resize()) }); $nextTick(() => resize())"
+                        @input="resize()"
                         class="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-red-600 focus:bg-white transition-colors overflow-hidden resize-none leading-relaxed min-h-[100px] whitespace-pre-wrap disabled:bg-neutral-100 disabled:text-neutral-400 disabled:cursor-not-allowed"></textarea>
                     </div>
                     <div>
@@ -1219,7 +1249,8 @@
                       </label>
                       <textarea rows="6" x-model="editProblemCause" :disabled="proposal.status === 'Approved'"
                         x-data="{ resize() { $el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px' } }"
-                        x-init="$watch('editProblemCause', () => $nextTick(() => resize())); $watch('isEditing', v => { if(v) $nextTick(() => resize()) }); $nextTick(() => resize())" @input="resize()"
+                        x-init="$watch('editProblemCause', () => $nextTick(() => resize())); $watch('isEditing', v => { if(v) $nextTick(() => resize()) }); $nextTick(() => resize())"
+                        @input="resize()"
                         class="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-red-600 focus:bg-white transition-colors overflow-hidden resize-none leading-relaxed min-h-[100px] whitespace-pre-wrap disabled:bg-neutral-100 disabled:text-neutral-400 disabled:cursor-not-allowed"></textarea>
                     </div>
                   </div>
@@ -1232,7 +1263,8 @@
                       </label>
                       <textarea rows="6" x-model="editSolutionAfter" :disabled="proposal.status === 'Approved'"
                         x-data="{ resize() { $el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px' } }"
-                        x-init="$watch('editSolutionAfter', () => $nextTick(() => resize())); $watch('isEditing', v => { if(v) $nextTick(() => resize()) }); $nextTick(() => resize())" @input="resize()"
+                        x-init="$watch('editSolutionAfter', () => $nextTick(() => resize())); $watch('isEditing', v => { if(v) $nextTick(() => resize()) }); $nextTick(() => resize())"
+                        @input="resize()"
                         class="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-red-600 focus:bg-white transition-colors overflow-hidden resize-none leading-relaxed min-h-[100px] whitespace-pre-wrap disabled:bg-neutral-100 disabled:text-neutral-400 disabled:cursor-not-allowed"></textarea>
                     </div>
                     <div>
@@ -1241,9 +1273,22 @@
                       </label>
                       <textarea rows="6" x-model="editExpectedBenefit" :disabled="proposal.status === 'Approved'"
                         x-data="{ resize() { $el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px' } }"
-                        x-init="$watch('editExpectedBenefit', () => $nextTick(() => resize())); $watch('isEditing', v => { if(v) $nextTick(() => resize()) }); $nextTick(() => resize())" @input="resize()"
+                        x-init="$watch('editExpectedBenefit', () => $nextTick(() => resize())); $watch('isEditing', v => { if(v) $nextTick(() => resize()) }); $nextTick(() => resize())"
+                        @input="resize()"
                         class="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-red-600 focus:bg-white transition-colors overflow-hidden resize-none leading-relaxed min-h-[100px] whitespace-pre-wrap disabled:bg-neutral-100 disabled:text-neutral-400 disabled:cursor-not-allowed"></textarea>
                     </div>
+                  </div>
+
+                  <!-- Correction Comments -->
+                  <div>
+                    <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">
+                      รายละเอียดการแก้ไข (Correction Notes)
+                    </label>
+                    <textarea rows="3" x-model="editCorrectionComments" :disabled="proposal.status === 'Approved'"
+                      x-data="{ resize() { $el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px' } }"
+                      x-init="$watch('editCorrectionComments', () => $nextTick(() => resize())); $watch('isEditing', v => { if(v) $nextTick(() => resize()) }); $nextTick(() => resize())"
+                      @input="resize()"
+                      class="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-red-600 focus:bg-white transition-colors overflow-hidden resize-none leading-relaxed min-h-[60px] whitespace-pre-wrap disabled:bg-neutral-100 disabled:text-neutral-400 disabled:cursor-not-allowed"></textarea>
                   </div>
 
                   <!-- Confirmation for departmental error rejection -->
@@ -1278,7 +1323,8 @@
                           problemBefore: editProblemBefore,
                           problemCause: editProblemCause,
                           solutionAfter: editSolutionAfter,
-                          expectedBenefit: editExpectedBenefit
+                          expectedBenefit: editExpectedBenefit,
+                          correctionComments: editCorrectionComments
                         }, confirmSamePerson);
                         
                         if (success) {
@@ -2383,7 +2429,8 @@
                 approver: item.approver || '',
                 feedback: item.feedback || '',
                 rejectedDueToDepartment: item.rejectedDueToDepartment === true || item.rejectedDueToDepartment === 'true',
-                editorName: item.editorName || ''
+                editorName: item.editorName || '',
+                correctionComments: item.correctionComments || ''
               }));
               localStorage.setItem('local_proposals', JSON.stringify(this.backendProposals));
             }
@@ -2450,7 +2497,8 @@
                 expectedBenefit: updatedData.expectedBenefit,
                 status: targetStatus,
                 rejectedDueToDepartment: false,
-                editorName: updatedData.editorName
+                editorName: updatedData.editorName,
+                correctionComments: updatedData.correctionComments
               };
             }
             return item;
@@ -2477,6 +2525,7 @@
                   expectedBenefit: updatedData.expectedBenefit,
                   status: targetStatus,
                   editorName: updatedData.editorName,
+                  correctionComments: updatedData.correctionComments,
                   rejectedDueToDepartment: false
                 })
               });
